@@ -159,6 +159,13 @@ export const useFileStore = defineStore("file", () => {
     });
   }
 
+  function updateFilePath(id: string, newPath: string): void {
+    const file = files.value.find((f) => f.id === id);
+    if (file) {
+      file.path = newPath;
+    }
+  }
+
   return {
     files,
     loading,
@@ -171,5 +178,6 @@ export const useFileStore = defineStore("file", () => {
     setManualOverride,
     updateFileStatus,
     resetAllStatus,
+    updateFilePath,
   };
 });

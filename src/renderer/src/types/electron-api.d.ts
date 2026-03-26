@@ -54,6 +54,7 @@ export interface ElectronAPI {
   executeRename: (
     plan: RenamePlanItem[],
     conflictStrategy?: string,
+    copyOnly?: boolean,
   ) => Promise<RenameResult>;
 
   // Directory selection

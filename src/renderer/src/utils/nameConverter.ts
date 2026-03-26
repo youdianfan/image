@@ -11,14 +11,15 @@ export type NameFormat =
 export const ALL_FORMATS: {
   format: NameFormat;
   label: string;
+  desc: string;
   example: string;
 }[] = [
-  { format: "camelCase", label: "camelCase", example: "whiteCat" },
-  { format: "PascalCase", label: "PascalCase", example: "WhiteCat" },
-  { format: "snake_case", label: "snake_case", example: "white_cat" },
-  { format: "SCREAMING_CASE", label: "SCREAMING_CASE", example: "WHITE_CAT" },
-  { format: "kebab-case", label: "kebab-case", example: "white-cat" },
-  { format: "package.case", label: "package.case", example: "white.cat" },
+  { format: "camelCase", label: "camelCase", desc: "小驼峰命名", example: "whiteCat" },
+  { format: "PascalCase", label: "PascalCase", desc: "大驼峰命名", example: "WhiteCat" },
+  { format: "snake_case", label: "snake_case", desc: "下划线命名", example: "white_cat" },
+  { format: "SCREAMING_CASE", label: "SCREAMING_CASE", desc: "大写下划线", example: "WHITE_CAT" },
+  { format: "kebab-case", label: "kebab-case", desc: "短横线命名", example: "white-cat" },
+  { format: "package.case", label: "package.case", desc: "点分命名", example: "white.cat" },
 ];
 
 // Check if a character is Chinese

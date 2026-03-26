@@ -37,6 +37,7 @@ export class RenameService {
     plan: RenamePlanItem[],
     window: BrowserWindow,
     conflictStrategy: ConflictStrategy = "autoNumber",
+    copyOnly = false,
   ): Promise<RenameResult> {
     const result: RenameResult = {
       success: 0,
@@ -74,7 +75,7 @@ export class RenameService {
         }
 
         // Execute rename/copy
-        await this.moveFile(item.source, finalPath);
+        await this.moveFile(item.source, finalPath, copyOnly);
 
         result.success++;
         this.sendProgress(window, {
@@ -103,9 +104,18 @@ export class RenameService {
     return result;
   }
 
-  private async moveFile(source: string, target: string): Promise<void> {
+  private async moveFile(
+    source: string,
+    target: string,
+    copyOnly = false,
+  ): Promise<void> {
     // If source and target are the same, nothing to do
     if (path.resolve(source) === path.resolve(target)) return;
+
+    if (copyOnly) {
+      await fs.copyFile(source, target);
+      return;
+    }
 
     try {
       // Try rename first (fast, atomic, same volume)

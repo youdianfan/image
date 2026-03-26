@@ -12,8 +12,9 @@ const api = {
   executeRename: (
     plan: unknown[],
     conflictStrategy?: string,
+    copyOnly?: boolean,
   ): Promise<unknown> =>
-    ipcRenderer.invoke("rename:execute", plan, conflictStrategy),
+    ipcRenderer.invoke("rename:execute", plan, conflictStrategy, copyOnly),
 
   // Directory selection
   selectDirectory: (): Promise<string | null> =>

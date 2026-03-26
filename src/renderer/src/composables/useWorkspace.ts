@@ -71,6 +71,11 @@ export function useWorkspace() {
         }
       }
 
+      // Apply output format extension when compress with format conversion is enabled
+      if (wsStore.compress.enabled && wsStore.compress.outputFormat !== "original") {
+        newName = newName.replace(/\.[^.]+$/, `.${wsStore.compress.outputFormat}`);
+      }
+
       // Target directory
       let targetDir: string;
       if (
@@ -175,6 +180,9 @@ export function useWorkspace() {
     });
 
     let completedSteps = 0;
+    let renameFailed = 0;
+    let compressFailed = 0;
+    const failedSources = new Set<string>();
 
     try {
       // Step 1: Rename (or copy to target directory)
@@ -185,18 +193,22 @@ export function useWorkspace() {
           id: item.id,
         }));
 
-        taskStore.updateProgress({ message: "正在重命名..." });
-        const renameResult = await window.api.executeRename(plan);
+        const copyOnly = wsStore.output.mode === "newDirectory";
+        taskStore.updateProgress({ message: copyOnly ? "正在复制..." : "正在重命名..." });
+        const renameResult = await window.api.executeRename(
+          plan,
+          undefined,
+          copyOnly,
+        );
         completedSteps += items.length;
         taskStore.updateProgress({
           completed: completedSteps,
           progress: Math.round((completedSteps / totalSteps) * 100),
         });
 
-        if (renameResult.failed > 0) {
-          ElMessage.warning(
-            `重命名: ${renameResult.success} 成功, ${renameResult.failed} 失败`,
-          );
+        renameFailed = renameResult.failed;
+        for (const err of renameResult.errors) {
+          failedSources.add(err.source);
         }
       }
 
@@ -231,15 +243,31 @@ export function useWorkspace() {
           progress: Math.round((completedSteps / totalSteps) * 100),
         });
 
-        if (compressResult.failed > 0) {
-          ElMessage.warning(
-            `压缩: ${compressResult.success} 成功, ${compressResult.failed} 失败`,
-          );
-        }
+        compressFailed = compressResult.failed;
       }
 
       taskStore.completeTask();
-      ElMessage.success("处理完成");
+
+      // Update file paths so re-execution uses correct source locations
+      // Only when files were moved (overwrite mode), not copied (newDirectory mode)
+      if (wsStore.output.mode === "overwrite") {
+        for (const item of items) {
+          if (!failedSources.has(item.sourcePath)) {
+            fileStore.updateFilePath(item.id, `${item.targetDir}\\${item.newName}`);
+          }
+        }
+      }
+
+      // Consolidated toast
+      const totalFailed = renameFailed + compressFailed;
+      if (totalFailed > 0) {
+        const parts: string[] = [];
+        if (renameFailed > 0) parts.push(`重命名 ${renameFailed} 失败`);
+        if (compressFailed > 0) parts.push(`压缩 ${compressFailed} 失败`);
+        ElMessage.warning(`处理完成，${parts.join("，")}`);
+      } else {
+        ElMessage.success("处理完成");
+      }
     } catch {
       taskStore.failTask("处理失败");
       ElMessage.error("处理过程中发生错误");

@@ -78,10 +78,11 @@ function registerIpcHandlers(): void {
       event,
       plan: RenamePlanItem[],
       conflictStrategy?: ConflictStrategy,
+      copyOnly?: boolean,
     ) => {
       const window = BrowserWindow.fromWebContents(event.sender);
       if (!window) throw new Error("No window found");
-      return renameService.execute(plan, window, conflictStrategy);
+      return renameService.execute(plan, window, conflictStrategy, copyOnly);
     },
   );
 

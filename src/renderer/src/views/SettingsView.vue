@@ -87,7 +87,7 @@
               <el-option
                 v-for="f in ALL_FORMATS"
                 :key="f.format"
-                :label="`${f.label}  (${f.example})`"
+                :label="`${f.desc} ${f.label} (${f.example})`"
                 :value="f.format"
               />
             </el-select>
