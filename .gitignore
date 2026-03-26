@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-electron/
+out/
+
+# AI models (large binary files)
+models/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# electron-builder output
+release/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Auto-import generated files
+src/renderer/src/auto-imports.d.ts
+src/renderer/src/components.d.ts
+
+# Claude Code
+.claude/
