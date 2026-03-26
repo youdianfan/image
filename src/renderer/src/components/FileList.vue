@@ -12,7 +12,11 @@
 
       <el-table-column label="原文件名" min-width="180">
         <template #default="{ row }">
-          <el-tooltip :content="row.originalPath" placement="top" :show-after="500">
+          <el-tooltip
+            :content="row.originalPath"
+            placement="top"
+            :show-after="500"
+          >
             <span class="filename">{{ row.originalName }}</span>
           </el-tooltip>
         </template>
@@ -31,10 +35,10 @@
               <el-input
                 v-model="editValue"
                 size="small"
+                autofocus
                 @blur="confirmEdit(row.id)"
                 @keyup.enter="confirmEdit(row.id)"
                 @keyup.escape="cancelEdit"
-                autofocus
               />
             </template>
             <template v-else>
@@ -45,7 +49,11 @@
               >
                 {{ row.newName }}
               </span>
-              <el-tooltip v-if="row.hasConflict" content="文件名冲突，已自动处理" placement="top">
+              <el-tooltip
+                v-if="row.hasConflict"
+                content="文件名冲突，已自动处理"
+                placement="top"
+              >
                 <el-icon class="conflict-icon"><WarningFilled /></el-icon>
               </el-tooltip>
             </template>
@@ -83,64 +91,75 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Right, WarningFilled, Delete } from '@element-plus/icons-vue'
+import { ref } from "vue";
+import { Right, WarningFilled, Delete } from "@element-plus/icons-vue";
 
 export interface FileListItem {
-  id: string
-  originalName: string
-  originalPath: string
-  newName: string
-  sizeText: string
-  status: string
-  hasConflict: boolean
+  id: string;
+  originalName: string;
+  originalPath: string;
+  newName: string;
+  sizeText: string;
+  status: string;
+  hasConflict: boolean;
 }
 
 defineProps<{
-  items: FileListItem[]
-  maxHeight?: number
-}>()
+  items: FileListItem[];
+  maxHeight?: number;
+}>();
 
 const emit = defineEmits<{
-  remove: [id: string]
-  editName: [id: string, newName: string]
-}>()
+  remove: [id: string];
+  editName: [id: string, newName: string];
+}>();
 
-const editingId = ref<string | null>(null)
-const editValue = ref('')
+const editingId = ref<string | null>(null);
+const editValue = ref("");
 
 function startEdit(row: FileListItem): void {
-  editingId.value = row.id
-  editValue.value = row.newName
+  editingId.value = row.id;
+  editValue.value = row.newName;
 }
 
 function confirmEdit(id: string): void {
   if (editValue.value.trim()) {
-    emit('editName', id, editValue.value.trim())
+    emit("editName", id, editValue.value.trim());
   }
-  editingId.value = null
+  editingId.value = null;
 }
 
 function cancelEdit(): void {
-  editingId.value = null
+  editingId.value = null;
 }
 
-function statusTagType(status: string): '' | 'success' | 'warning' | 'danger' | 'info' {
+function statusTagType(
+  status: string,
+): "success" | "warning" | "danger" | "info" | "primary" | undefined {
   switch (status) {
-    case 'done': return 'success'
-    case 'processing': return ''
-    case 'error': return 'danger'
-    default: return 'info'
+    case "done":
+      return "success";
+    case "processing":
+      return undefined;
+    case "error":
+      return "danger";
+    default:
+      return "info";
   }
 }
 
 function statusLabel(status: string): string {
   switch (status) {
-    case 'pending': return '待处理'
-    case 'processing': return '处理中'
-    case 'done': return '完成'
-    case 'error': return '错误'
-    default: return status
+    case "pending":
+      return "待处理";
+    case "processing":
+      return "处理中";
+    case "done":
+      return "完成";
+    case "error":
+      return "错误";
+    default:
+      return status;
   }
 }
 </script>

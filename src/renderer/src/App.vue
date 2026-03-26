@@ -6,11 +6,7 @@
         <div class="sidebar-header">
           <h1 class="app-title">Image Rename AI</h1>
         </div>
-        <el-menu
-          :default-active="currentRoute"
-          router
-          class="sidebar-menu"
-        >
+        <el-menu :default-active="currentRoute" router class="sidebar-menu">
           <el-menu-item index="/rename">
             <el-icon><EditPen /></el-icon>
             <span>批量重命名</span>
@@ -43,7 +39,9 @@
         <div class="status-left">
           <span v-if="taskStore.currentTask">
             {{ taskStore.currentTask.message }}
-            ({{ taskStore.currentTask.completed }}/{{ taskStore.currentTask.total }})
+            ({{ taskStore.currentTask.completed }}/{{
+              taskStore.currentTask.total
+            }})
           </span>
           <span v-else>就绪</span>
         </div>
@@ -56,17 +54,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { EditPen, Switch, PictureFilled, Setting } from '@element-plus/icons-vue'
-import { useFileStore } from '@/stores/file.store'
-import { useTaskStore } from '@/stores/task.store'
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import {
+  EditPen,
+  Switch,
+  PictureFilled,
+  Setting,
+} from "@element-plus/icons-vue";
+import { useFileStore } from "@/stores/file.store";
+import { useTaskStore } from "@/stores/task.store";
 
-const route = useRoute()
-const fileStore = useFileStore()
-const taskStore = useTaskStore()
+const route = useRoute();
+const fileStore = useFileStore();
+const taskStore = useTaskStore();
 
-const currentRoute = computed(() => route.path)
+const currentRoute = computed(() => route.path);
 </script>
 
 <style scoped>

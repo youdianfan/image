@@ -2,15 +2,15 @@
 
 ## 技术栈
 
-| 层级 | 技术选择 | 说明 |
-|------|---------|------|
-| 框架 | Flutter 3.19+ | 跨平台 UI 框架 |
-| 语言 | Dart | 你已熟悉 |
-| 状态管理 | Riverpod 2.0 | 类型安全的状态管理 |
-| 图片处理 | flutter_image_compress + image | 压缩+处理 |
-| AI 推理 | tflite_flutter / dart:ffi + ONNX C API | 离线模型推理 |
-| 文件操作 | file_picker + path_provider | 文件选择与路径 |
-| UI 组件 | fluent_ui (Win) / macos_ui (Mac) | 原生风格UI |
+| 层级     | 技术选择                               | 说明               |
+| -------- | -------------------------------------- | ------------------ |
+| 框架     | Flutter 3.19+                          | 跨平台 UI 框架     |
+| 语言     | Dart                                   | 你已熟悉           |
+| 状态管理 | Riverpod 2.0                           | 类型安全的状态管理 |
+| 图片处理 | flutter_image_compress + image         | 压缩+处理          |
+| AI 推理  | tflite_flutter / dart:ffi + ONNX C API | 离线模型推理       |
+| 文件操作 | file_picker + path_provider            | 文件选择与路径     |
+| UI 组件  | fluent_ui (Win) / macos_ui (Mac)       | 原生风格UI         |
 
 ---
 
@@ -79,8 +79,8 @@ description: Batch image rename tool with AI
 version: 1.0.0
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
-  flutter: '>=3.19.0'
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
 
 dependencies:
   flutter:
@@ -91,8 +91,8 @@ dependencies:
   riverpod_annotation: ^2.3.0
 
   # UI
-  fluent_ui: ^4.8.0          # Windows 风格 UI
-  macos_ui: ^2.0.0           # macOS 风格 UI
+  fluent_ui: ^4.8.0 # Windows 风格 UI
+  macos_ui: ^2.0.0 # macOS 风格 UI
 
   # 文件操作
   file_picker: ^6.1.0
@@ -101,7 +101,7 @@ dependencies:
 
   # 图片处理
   flutter_image_compress: ^2.1.0
-  image: ^4.1.0               # 纯 Dart 图片处理
+  image: ^4.1.0 # 纯 Dart 图片处理
 
   # AI（可选，V2再加）
   tflite_flutter: ^0.10.0
@@ -169,6 +169,7 @@ Future<void> convertFormat(String inputPath, String outputPath, String format) a
 Flutter 上 ONNX 支持不如 Node.js 成熟，有两条路：
 
 **路径1：TFLite（推荐 Flutter 方案用这个）**
+
 ```dart
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -187,12 +188,14 @@ class AiService {
 ```
 
 **路径2：FFI 调用 ONNX C API（复杂但功能强）**
+
 ```dart
 // 通过 dart:ffi 调用 ONNX Runtime C 动态库
 // 复杂度高，建议 V2 再考虑
 ```
 
 **路径3：调用本地 Python 子进程（简单但需要用户安装 Python）**
+
 ```dart
 import 'dart:io';
 

@@ -41,7 +41,12 @@
             <el-icon><FolderAdd /></el-icon>
             添加文件夹
           </el-button>
-          <el-button size="small" type="danger" plain @click="$emit('clearFiles')">
+          <el-button
+            size="small"
+            type="danger"
+            plain
+            @click="$emit('clearFiles')"
+          >
             <el-icon><Delete /></el-icon>
             清空
           </el-button>
@@ -52,53 +57,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { UploadFilled, FolderOpened, Folder, PictureFilled, Plus, FolderAdd, Delete } from '@element-plus/icons-vue'
+import { ref } from "vue";
+import {
+  UploadFilled,
+  FolderOpened,
+  Folder,
+  PictureFilled,
+  Plus,
+  FolderAdd,
+  Delete,
+} from "@element-plus/icons-vue";
 
 defineProps<{
-  compact: boolean
-  fileCount: number
-}>()
+  compact: boolean;
+  fileCount: number;
+}>();
 
 const emit = defineEmits<{
-  importFiles: []
-  importFolder: []
-  clearFiles: []
-  drop: [paths: string[]]
-}>()
+  importFiles: [];
+  importFolder: [];
+  clearFiles: [];
+  drop: [paths: string[]];
+}>();
 
-const isDragOver = ref(false)
+const isDragOver = ref(false);
 
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic'])
+const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "heic"]);
 
 function onDragOver(): void {
-  isDragOver.value = true
+  isDragOver.value = true;
 }
 
 function onDragLeave(): void {
-  isDragOver.value = false
+  isDragOver.value = false;
 }
 
 function onDrop(event: DragEvent): void {
-  isDragOver.value = false
-  const files = event.dataTransfer?.files
-  if (!files || files.length === 0) return
+  isDragOver.value = false;
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
 
-  const paths: string[] = []
+  const paths: string[] = [];
   for (let i = 0; i < files.length; i++) {
-    const file = files[i]
+    const file = files[i];
     // In Electron with sandbox:false, File.path is available
-    const filePath = (file as File & { path: string }).path
+    const filePath = (file as File & { path: string }).path;
     if (filePath) {
-      const ext = filePath.split('.').pop()?.toLowerCase() || ''
+      const ext = filePath.split(".").pop()?.toLowerCase() || "";
       if (IMAGE_EXTENSIONS.has(ext)) {
-        paths.push(filePath)
+        paths.push(filePath);
       }
     }
   }
 
   if (paths.length > 0) {
-    emit('drop', paths)
+    emit("drop", paths);
   }
 }
 </script>

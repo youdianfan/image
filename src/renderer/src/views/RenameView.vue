@@ -6,7 +6,7 @@
         <h2>批量重命名</h2>
         <p class="page-desc">导入图片文件，设置命名规则，批量重命名</p>
       </div>
-      <div class="header-actions" v-if="fileStore.files.length > 0">
+      <div v-if="fileStore.files.length > 0" class="header-actions">
         <el-button
           type="primary"
           :disabled="!canExecute"
@@ -57,44 +57,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Check } from '@element-plus/icons-vue'
-import { useFileStore } from '@/stores/file.store'
-import { useFileImport } from '@/composables/useFileImport'
-import { useRename } from '@/composables/useRename'
-import ImportArea from '@/components/ImportArea.vue'
-import FileList from '@/components/FileList.vue'
-import RuleEditor from '@/components/RuleEditor.vue'
+import { ref, onMounted, onUnmounted } from "vue";
+import { Check } from "@element-plus/icons-vue";
+import { useFileStore } from "@/stores/file.store";
+import { useFileImport } from "@/composables/useFileImport";
+import { useRename } from "@/composables/useRename";
+import ImportArea from "@/components/ImportArea.vue";
+import FileList from "@/components/FileList.vue";
+import RuleEditor from "@/components/RuleEditor.vue";
 
-const fileStore = useFileStore()
-const { handleImportFiles, handleImportFolder, handleDrop, handleClear } = useFileImport()
-const { previewItems, canExecute, executeRename, setupProgressListener, cleanupProgressListener } = useRename()
+const fileStore = useFileStore();
+const { handleImportFiles, handleImportFolder, handleDrop, handleClear } =
+  useFileImport();
+const {
+  previewItems,
+  canExecute,
+  executeRename,
+  setupProgressListener,
+  cleanupProgressListener,
+} = useRename();
 
-const tableMaxHeight = ref(500)
+const tableMaxHeight = ref(500);
 
 function onRemoveFile(id: string): void {
-  fileStore.removeFile(id)
+  fileStore.removeFile(id);
 }
 
 function onEditName(id: string, newName: string): void {
-  fileStore.setManualOverride(id, newName)
+  fileStore.setManualOverride(id, newName);
 }
 
 function updateTableHeight(): void {
   // Reserve space for header (80px), import bar (52px), padding
-  tableMaxHeight.value = window.innerHeight - 230
+  tableMaxHeight.value = window.innerHeight - 230;
 }
 
 onMounted(() => {
-  setupProgressListener()
-  updateTableHeight()
-  window.addEventListener('resize', updateTableHeight)
-})
+  setupProgressListener();
+  updateTableHeight();
+  window.addEventListener("resize", updateTableHeight);
+});
 
 onUnmounted(() => {
-  cleanupProgressListener()
-  window.removeEventListener('resize', updateTableHeight)
-})
+  cleanupProgressListener();
+  window.removeEventListener("resize", updateTableHeight);
+});
 </script>
 
 <style scoped>

@@ -5,4 +5,4 @@ export class TaskService {
   // Progress broadcast via IPC
 }
 
-export const taskService = new TaskService()
+export const taskService = new TaskService();

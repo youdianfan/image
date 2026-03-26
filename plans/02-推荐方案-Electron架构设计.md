@@ -2,18 +2,18 @@
 
 ## 技术栈
 
-| 层级 | 技术选择 | 说明 |
-|------|---------|------|
-| 桌面框架 | Electron 29+ | 跨平台桌面容器 |
-| 前端框架 | Vue 3 + TypeScript | 响应式 UI |
-| 状态管理 | Pinia | 轻量状态管理 |
-| UI 组件库 | Element Plus | 企业级组件库 |
-| 构建工具 | Vite + electron-vite | 极速 HMR |
-| 图片处理 | Sharp | 高性能图片处理 |
-| AI 推理 | onnxruntime-node | 离线 ONNX 模型 |
-| 中文分词 | nodejieba / segmentit | 中文分词 |
-| 翻译 | MarianMT (ONNX) | 离线中英翻译 |
-| 打包 | electron-builder | 跨平台打包 |
+| 层级      | 技术选择              | 说明           |
+| --------- | --------------------- | -------------- |
+| 桌面框架  | Electron 29+          | 跨平台桌面容器 |
+| 前端框架  | Vue 3 + TypeScript    | 响应式 UI      |
+| 状态管理  | Pinia                 | 轻量状态管理   |
+| UI 组件库 | Element Plus          | 企业级组件库   |
+| 构建工具  | Vite + electron-vite  | 极速 HMR       |
+| 图片处理  | Sharp                 | 高性能图片处理 |
+| AI 推理   | onnxruntime-node      | 离线 ONNX 模型 |
+| 中文分词  | nodejieba / segmentit | 中文分词       |
+| 翻译      | MarianMT (ONNX)       | 离线中英翻译   |
+| 打包      | electron-builder      | 跨平台打包     |
 
 ---
 
@@ -124,27 +124,30 @@ image-rename-ai/
 
 ```typescript
 // preload.ts — 暴露安全的API给渲染进程
-contextBridge.exposeInMainWorld('api', {
+contextBridge.exposeInMainWorld("api", {
   // 文件操作
-  selectFiles: () => ipcRenderer.invoke('file:select'),
-  selectFolder: () => ipcRenderer.invoke('file:selectFolder'),
+  selectFiles: () => ipcRenderer.invoke("file:select"),
+  selectFolder: () => ipcRenderer.invoke("file:selectFolder"),
 
   // 重命名
-  previewRename: (files, rules) => ipcRenderer.invoke('rename:preview', files, rules),
-  executeRename: (plan) => ipcRenderer.invoke('rename:execute', plan),
+  previewRename: (files, rules) =>
+    ipcRenderer.invoke("rename:preview", files, rules),
+  executeRename: (plan) => ipcRenderer.invoke("rename:execute", plan),
 
   // AI命名
-  aiSuggestName: (filename) => ipcRenderer.invoke('ai:suggest', filename),
-  aiBatchSuggest: (filenames) => ipcRenderer.invoke('ai:batchSuggest', filenames),
+  aiSuggestName: (filename) => ipcRenderer.invoke("ai:suggest", filename),
+  aiBatchSuggest: (filenames) =>
+    ipcRenderer.invoke("ai:batchSuggest", filenames),
 
   // 图片压缩
-  compressImages: (files, options) => ipcRenderer.invoke('compress:execute', files, options),
+  compressImages: (files, options) =>
+    ipcRenderer.invoke("compress:execute", files, options),
 
   // 任务系统
-  onTaskProgress: (callback) => ipcRenderer.on('task:progress', callback),
-  pauseTask: (taskId) => ipcRenderer.invoke('task:pause', taskId),
-  resumeTask: (taskId) => ipcRenderer.invoke('task:resume', taskId),
-})
+  onTaskProgress: (callback) => ipcRenderer.on("task:progress", callback),
+  pauseTask: (taskId) => ipcRenderer.invoke("task:pause", taskId),
+  resumeTask: (taskId) => ipcRenderer.invoke("task:resume", taskId),
+});
 ```
 
 ---
@@ -154,32 +157,35 @@ contextBridge.exposeInMainWorld('api', {
 ### 模块一：批量重命名
 
 **核心流程：**
+
 ```
 导入文件 → 设置规则 → 实时预览 → 冲突检测 → 执行重命名
 ```
 
 **命名规则模板引擎：**
+
 ```typescript
 // 支持的变量
 interface RenameTemplate {
-  pattern: string  // e.g. "{type}-{module}-{ai}-{index}"
+  pattern: string; // e.g. "{type}-{module}-{ai}-{index}"
 }
 
 // 可用变量
 type TemplateVar =
-  | '{original}'  // 原文件名
-  | '{ai}'        // AI生成名称
-  | '{index}'     // 序号 (001, 002...)
-  | '{type}'      // 类型 (product, banner...)
-  | '{module}'    // 模块 (homepage, detail...)
-  | '{date}'      // 日期
-  | '{width}'     // 图片宽度
-  | '{height}'    // 图片高度
+  | "{original}" // 原文件名
+  | "{ai}" // AI生成名称
+  | "{index}" // 序号 (001, 002...)
+  | "{type}" // 类型 (product, banner...)
+  | "{module}" // 模块 (homepage, detail...)
+  | "{date}" // 日期
+  | "{width}" // 图片宽度
+  | "{height}"; // 图片高度
 ```
 
 **冲突处理：**
+
 ```typescript
-type ConflictStrategy = 'autoNumber' | 'overwrite' | 'skip'
+type ConflictStrategy = "autoNumber" | "overwrite" | "skip";
 
 // autoNumber: image.jpg → image-1.jpg → image-2.jpg
 // overwrite: 直接覆盖（需二次确认）
@@ -193,14 +199,22 @@ type ConflictStrategy = 'autoNumber' | 'overwrite' | 'skip'
 ```typescript
 // utils/nameConverter.ts
 export function convertName(input: string, format: NameFormat): string {
-  const words = tokenize(input)  // 分词（支持中英文混合）
+  const words = tokenize(input); // 分词（支持中英文混合）
   switch (format) {
-    case 'camelCase':    return words.map((w, i) => i === 0 ? w.toLowerCase() : capitalize(w)).join('')
-    case 'PascalCase':   return words.map(capitalize).join('')
-    case 'snake_case':   return words.map(w => w.toLowerCase()).join('_')
-    case 'SCREAMING':    return words.map(w => w.toUpperCase()).join('_')
-    case 'kebab-case':   return words.map(w => w.toLowerCase()).join('-')
-    case 'package.case': return words.map(w => w.toLowerCase()).join('.')
+    case "camelCase":
+      return words
+        .map((w, i) => (i === 0 ? w.toLowerCase() : capitalize(w)))
+        .join("");
+    case "PascalCase":
+      return words.map(capitalize).join("");
+    case "snake_case":
+      return words.map((w) => w.toLowerCase()).join("_");
+    case "SCREAMING":
+      return words.map((w) => w.toUpperCase()).join("_");
+    case "kebab-case":
+      return words.map((w) => w.toLowerCase()).join("-");
+    case "package.case":
+      return words.map((w) => w.toLowerCase()).join(".");
   }
 }
 ```
@@ -212,34 +226,40 @@ export function convertName(input: string, format: NameFormat): string {
 ### 模块四：图片压缩
 
 **Sharp 处理流程：**
+
 ```typescript
 // services/image.service.ts
-import sharp from 'sharp'
+import sharp from "sharp";
 
-async function compressImage(input: string, options: CompressOptions): Promise<Buffer> {
-  let pipeline = sharp(input)
+async function compressImage(
+  input: string,
+  options: CompressOptions,
+): Promise<Buffer> {
+  let pipeline = sharp(input);
 
   // 调整尺寸
   if (options.scale !== 100) {
-    const metadata = await sharp(input).metadata()
+    const metadata = await sharp(input).metadata();
     pipeline = pipeline.resize(
-      Math.round(metadata.width! * options.scale / 100)
-    )
+      Math.round((metadata.width! * options.scale) / 100),
+    );
   }
 
   // 去除 EXIF
   if (options.stripExif) {
-    pipeline = pipeline.rotate() // 先应用EXIF旋转，再去除
+    pipeline = pipeline.rotate(); // 先应用EXIF旋转，再去除
   }
 
   // 输出格式
   switch (options.format) {
-    case 'jpg':
-      return pipeline.jpeg({ quality: options.quality }).toBuffer()
-    case 'webp':
-      return pipeline.webp({ quality: options.quality }).toBuffer()
-    case 'png':
-      return pipeline.png({ compressionLevel: Math.round((100 - options.quality) / 10) }).toBuffer()
+    case "jpg":
+      return pipeline.jpeg({ quality: options.quality }).toBuffer();
+    case "webp":
+      return pipeline.webp({ quality: options.quality }).toBuffer();
+    case "png":
+      return pipeline
+        .png({ compressionLevel: Math.round((100 - options.quality) / 10) })
+        .toBuffer();
   }
 }
 ```
@@ -249,23 +269,31 @@ async function compressImage(input: string, options: CompressOptions): Promise<B
 ```typescript
 // services/task.service.ts
 interface Task {
-  id: string
-  type: 'rename' | 'compress'
-  status: 'pending' | 'running' | 'paused' | 'done' | 'failed'
-  progress: number        // 0-100
-  total: number           // 总文件数
-  completed: number       // 已完成数
-  errors: TaskError[]     // 错误记录
+  id: string;
+  type: "rename" | "compress";
+  status: "pending" | "running" | "paused" | "done" | "failed";
+  progress: number; // 0-100
+  total: number; // 总文件数
+  completed: number; // 已完成数
+  errors: TaskError[]; // 错误记录
 }
 
 class TaskQueue {
-  private queue: Task[] = []
-  private concurrency = 4  // 并发数
+  private queue: Task[] = [];
+  private concurrency = 4; // 并发数
 
-  async add(task: Task): Promise<void> { /* ... */ }
-  pause(taskId: string): void { /* ... */ }
-  resume(taskId: string): void { /* ... */ }
-  retry(taskId: string): void { /* ... */ }
+  async add(task: Task): Promise<void> {
+    /* ... */
+  }
+  pause(taskId: string): void {
+    /* ... */
+  }
+  resume(taskId: string): void {
+    /* ... */
+  }
+  retry(taskId: string): void {
+    /* ... */
+  }
 }
 ```
 

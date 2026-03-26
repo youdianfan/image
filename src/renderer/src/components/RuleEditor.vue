@@ -36,7 +36,12 @@
           style="width: 100%"
           @change="onRuleChange"
         >
-          <el-option v-for="opt in typeOptions" :key="opt" :label="opt" :value="opt" />
+          <el-option
+            v-for="opt in typeOptions"
+            :key="opt"
+            :label="opt"
+            :value="opt"
+          />
         </el-select>
       </el-form-item>
 
@@ -51,7 +56,12 @@
           style="width: 100%"
           @change="onRuleChange"
         >
-          <el-option v-for="opt in moduleOptions" :key="opt" :label="opt" :value="opt" />
+          <el-option
+            v-for="opt in moduleOptions"
+            :key="opt"
+            :label="opt"
+            :value="opt"
+          />
         </el-select>
       </el-form-item>
 
@@ -145,41 +155,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { FolderOpened } from '@element-plus/icons-vue'
-import { useRenameStore } from '@/stores/rename.store'
-import { storeToRefs } from 'pinia'
+import { ref } from "vue";
+import { FolderOpened } from "@element-plus/icons-vue";
+import { useRenameStore } from "@/stores/rename.store";
+import { storeToRefs } from "pinia";
 
-const renameStore = useRenameStore()
-const { rule } = storeToRefs(renameStore)
+const renameStore = useRenameStore();
+const { rule } = storeToRefs(renameStore);
 
-const templateInput = ref<InstanceType<typeof import('element-plus')['ElInput']>>()
+const templateInput =
+  ref<InstanceType<(typeof import("element-plus"))["ElInput"]>>();
 
-const typeOptions = ['product', 'banner', 'avatar', 'icon', 'bg']
-const moduleOptions = ['homepage', 'detail', 'blog', 'list', 'common']
+const typeOptions = ["product", "banner", "avatar", "icon", "bg"];
+const moduleOptions = ["homepage", "detail", "blog", "list", "common"];
 
 const availableVariables = [
-  { name: 'original', label: '{original}' },
-  { name: 'index', label: '{index}' },
-  { name: 'type', label: '{type}' },
-  { name: 'module', label: '{module}' },
-  { name: 'date', label: '{date}' }
-]
+  { name: "original", label: "{original}" },
+  { name: "index", label: "{index}" },
+  { name: "type", label: "{type}" },
+  { name: "module", label: "{module}" },
+  { name: "date", label: "{date}" },
+];
 
 function insertVariable(varName: string): void {
-  const input = templateInput.value
+  const input = templateInput.value;
   if (input) {
-    const el = (input as unknown as { input: HTMLInputElement }).input
+    const el = (input as unknown as { input: HTMLInputElement }).input;
     if (el) {
-      const start = el.selectionStart ?? rule.value.template.length
-      const end = el.selectionEnd ?? start
-      const text = rule.value.template
-      rule.value.template = text.slice(0, start) + `{${varName}}` + text.slice(end)
+      const start = el.selectionStart ?? rule.value.template.length;
+      const end = el.selectionEnd ?? start;
+      const text = rule.value.template;
+      rule.value.template =
+        text.slice(0, start) + `{${varName}}` + text.slice(end);
     } else {
-      rule.value.template += `{${varName}}`
+      rule.value.template += `{${varName}}`;
     }
   } else {
-    rule.value.template += `{${varName}}`
+    rule.value.template += `{${varName}}`;
   }
 }
 
@@ -191,11 +203,11 @@ function onRuleChange(): void {
   // Reactive update is handled by storeToRefs
 }
 
-async function selectOutputDir(): void {
+async function selectOutputDir(): Promise<void> {
   try {
-    const dir = await window.api.selectDirectory()
+    const dir = await window.api.selectDirectory();
     if (dir) {
-      rule.value.outputDirectory = dir
+      rule.value.outputDirectory = dir;
     }
   } catch {
     // User cancelled
@@ -203,7 +215,7 @@ async function selectOutputDir(): void {
 }
 
 function resetRule(): void {
-  renameStore.resetRule()
+  renameStore.resetRule();
 }
 </script>
 

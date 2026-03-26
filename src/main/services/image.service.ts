@@ -5,4 +5,4 @@ export class ImageService {
   // Batch processing pipeline
 }
 
-export const imageService = new ImageService()
+export const imageService = new ImageService();
