@@ -7,6 +7,7 @@
 ## 实现内容
 
 ### 图片处理服务（主进程）
+
 - `image.service.ts`: 基于 Sharp 0.34.5 的完整图片压缩服务
 - 质量调节（0-100，JPG 使用 mozjpeg 优化）
 - 尺寸缩放（百分比）
@@ -17,12 +18,14 @@
 - 图片元数据读取（width/height/format）
 
 ### IPC 通信
+
 - `compress:execute` handler: 接收文件路径和压缩选项，调用 ImageService
 - `file:getImageMetadata` handler: 读取图片尺寸和格式
 - preload 新增 `compressImages` 和 `getImageMetadata` 方法
 - 类型定义新增 `CompressResult` 接口
 
 ### 压缩页面
+
 - `CompressView.vue`: 完整实现
 - 拖拽导入 + 文件选择
 - 文件列表：原始大小 / 压缩后大小 / 压缩率 / 状态
@@ -32,13 +35,14 @@
 
 ## 文件清单
 
-| 文件 | 操作 |
-|------|------|
-| src/main/services/image.service.ts | 重写 |
-| src/main/index.ts | 修改 |
-| src/preload/index.ts | 修改 |
+| 文件                                     | 操作 |
+| ---------------------------------------- | ---- |
+| src/main/services/image.service.ts       | 重写 |
+| src/main/index.ts                        | 修改 |
+| src/preload/index.ts                     | 修改 |
 | src/renderer/src/types/electron-api.d.ts | 修改 |
-| src/renderer/src/views/CompressView.vue | 重写 |
+| src/renderer/src/views/CompressView.vue  | 重写 |
 
 ## 下一步
+
 Phase 5: 任务系统 + 收尾（Day 13-15）

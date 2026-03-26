@@ -18,7 +18,11 @@
         </router-link>
       </nav>
       <div class="nav-right">
-        <router-link to="/settings" class="settings-btn" active-class="is-active">
+        <router-link
+          to="/settings"
+          class="settings-btn"
+          active-class="is-active"
+        >
           <el-icon :size="18"><Setting /></el-icon>
         </router-link>
       </div>
@@ -39,11 +43,20 @@
             :stroke-width="10"
             :show-text="false"
             class="task-progress"
-            :status="taskStore.currentTask.status === 'failed' ? 'exception' : undefined"
+            :status="
+              taskStore.currentTask.status === 'failed'
+                ? 'exception'
+                : undefined
+            "
           />
-          <span class="task-percent">{{ taskStore.currentTask.progress }}%</span>
+          <span class="task-percent"
+            >{{ taskStore.currentTask.progress }}%</span
+          >
           <el-button
-            v-if="taskStore.currentTask.status === 'done' || taskStore.currentTask.status === 'failed'"
+            v-if="
+              taskStore.currentTask.status === 'done' ||
+              taskStore.currentTask.status === 'failed'
+            "
             size="small"
             text
             @click="taskStore.clearTask()"
@@ -63,9 +76,8 @@
 <script setup lang="ts">
 import { markRaw } from "vue";
 import {
-  EditPen,
+  FolderOpened,
   Switch,
-  PictureFilled,
   Setting,
   Close,
 } from "@element-plus/icons-vue";
@@ -76,9 +88,8 @@ const fileStore = useFileStore();
 const taskStore = useTaskStore();
 
 const navTabs = [
-  { path: "/rename", label: "批量重命名", icon: markRaw(EditPen) },
+  { path: "/workspace", label: "工作台", icon: markRaw(FolderOpened) },
   { path: "/format", label: "格式转换", icon: markRaw(Switch) },
-  { path: "/compress", label: "图片压缩", icon: markRaw(PictureFilled) },
 ];
 </script>
 

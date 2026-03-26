@@ -23,7 +23,9 @@
     >
       <template #title>
         检测到中文输入。
-        <router-link to="/settings" style="color: #409eff">前往设置下载 AI 模型</router-link>
+        <router-link to="/settings" style="color: #409eff"
+          >前往设置下载 AI 模型</router-link
+        >
         以启用智能中英翻译。
       </template>
     </el-alert>
@@ -68,14 +70,14 @@
         AI 翻译中...
       </div>
       <div class="format-grid">
-        <div v-for="item in singleResults" :key="item.format" class="format-card">
+        <div
+          v-for="item in singleResults"
+          :key="item.format"
+          class="format-card"
+        >
           <div class="card-header">
             <span class="card-label">{{ item.label }}</span>
-            <el-button
-              size="small"
-              text
-              @click="copyToClipboard(item.value)"
-            >
+            <el-button size="small" text @click="copyToClipboard(item.value)">
               <el-icon><CopyDocument /></el-icon>
             </el-button>
           </div>
@@ -155,9 +157,10 @@ const syncResults = ref<Record<string, string>>({});
 const asyncResults = ref<Record<string, string>>({});
 
 const singleResults = computed(() => {
-  const results = Object.keys(asyncResults.value).length > 0
-    ? asyncResults.value
-    : syncResults.value;
+  const results =
+    Object.keys(asyncResults.value).length > 0
+      ? asyncResults.value
+      : syncResults.value;
   return ALL_FORMATS.map((f) => ({
     format: f.format,
     label: f.label,
@@ -250,10 +253,10 @@ function saveHistory(): void {
 function addToHistory(input: string): void {
   const trimmed = input.trim();
   if (!trimmed) return;
-  history.value = [trimmed, ...history.value.filter((h) => h !== trimmed)].slice(
-    0,
-    MAX_HISTORY,
-  );
+  history.value = [
+    trimmed,
+    ...history.value.filter((h) => h !== trimmed),
+  ].slice(0, MAX_HISTORY);
   saveHistory();
 }
 

@@ -41,18 +41,27 @@
         <div class="info-row">
           <span class="info-label">状态</span>
           <span class="info-value">
-            <el-tag v-if="aiStore.modelStatus === 'ready'" type="success" size="small">
+            <el-tag
+              v-if="aiStore.modelStatus === 'ready'"
+              type="success"
+              size="small"
+            >
               已就绪
             </el-tag>
-            <el-tag v-else-if="aiStore.modelStatus === 'downloading'" size="small">
+            <el-tag
+              v-else-if="aiStore.modelStatus === 'downloading'"
+              size="small"
+            >
               下载中 {{ aiStore.downloadProgress }}%
             </el-tag>
-            <el-tag v-else-if="aiStore.modelStatus === 'error'" type="danger" size="small">
+            <el-tag
+              v-else-if="aiStore.modelStatus === 'error'"
+              type="danger"
+              size="small"
+            >
               错误
             </el-tag>
-            <el-tag v-else type="info" size="small">
-              未下载
-            </el-tag>
+            <el-tag v-else type="info" size="small"> 未下载 </el-tag>
           </span>
         </div>
 
@@ -73,17 +82,17 @@
 
         <div class="ai-actions">
           <el-button
-            v-if="aiStore.modelStatus === 'not-downloaded' || aiStore.modelStatus === 'error'"
+            v-if="
+              aiStore.modelStatus === 'not-downloaded' ||
+              aiStore.modelStatus === 'error'
+            "
             type="primary"
             :loading="aiStore.isDownloading"
             @click="downloadModel"
           >
             下载模型
           </el-button>
-          <el-button
-            v-if="aiStore.isDownloading"
-            disabled
-          >
+          <el-button v-if="aiStore.isDownloading" disabled>
             正在下载...
           </el-button>
           <span v-if="aiStore.modelStatus === 'ready'" class="ready-text">

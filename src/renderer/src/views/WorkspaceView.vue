@@ -1,23 +1,5 @@
 <template>
-  <div class="rename-view">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-left">
-        <h2>批量重命名</h2>
-        <p class="page-desc">导入图片文件，设置命名规则，批量重命名</p>
-      </div>
-      <div v-if="fileStore.files.length > 0" class="header-actions">
-        <el-button
-          type="primary"
-          :disabled="!canExecute"
-          @click="executeRename"
-        >
-          <el-icon><Check /></el-icon>
-          执行重命名
-        </el-button>
-      </div>
-    </div>
-
+  <div class="workspace-view">
     <!-- Empty state -->
     <template v-if="fileStore.files.length === 0">
       <ImportArea
@@ -31,16 +13,32 @@
 
     <!-- Working state -->
     <template v-else>
-      <div class="rename-body">
-        <div class="rename-main">
-          <ImportArea
-            :compact="true"
-            :file-count="fileStore.files.length"
-            @import-files="handleImportFiles"
-            @import-folder="handleImportFolder"
-            @drop="handleDrop"
-            @clear-files="handleClear"
-          />
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <el-button size="small" @click="handleImportFiles">
+            <el-icon><Plus /></el-icon> 添加
+          </el-button>
+          <el-button size="small" type="danger" plain @click="handleClear">
+            <el-icon><Delete /></el-icon> 清空
+          </el-button>
+          <span class="file-count">{{ fileStore.files.length }} 个文件</span>
+        </div>
+        <div class="toolbar-right">
+          <el-button
+            type="primary"
+            :disabled="!canExecute"
+            @click="execute"
+          >
+            <el-icon><VideoPlay /></el-icon>
+            执行
+          </el-button>
+        </div>
+      </div>
+
+      <!-- Main body -->
+      <div class="workspace-body">
+        <div class="workspace-main">
           <FileList
             :items="previewItems"
             :max-height="tableMaxHeight"
@@ -48,8 +46,8 @@
             @edit-name="onEditName"
           />
         </div>
-        <div class="rename-sidebar">
-          <RuleEditor />
+        <div class="workspace-sidebar">
+          <SettingsPanel />
         </div>
       </div>
     </template>
@@ -58,13 +56,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { Check } from "@element-plus/icons-vue";
+import { Plus, Delete, VideoPlay } from "@element-plus/icons-vue";
 import { useFileStore } from "@/stores/file.store";
 import { useFileImport } from "@/composables/useFileImport";
-import { useRename } from "@/composables/useRename";
+import { useWorkspace } from "@/composables/useWorkspace";
 import ImportArea from "@/components/ImportArea.vue";
 import FileList from "@/components/FileList.vue";
-import RuleEditor from "@/components/RuleEditor.vue";
+import SettingsPanel from "@/components/SettingsPanel.vue";
 
 const fileStore = useFileStore();
 const { handleImportFiles, handleImportFolder, handleDrop, handleClear } =
@@ -72,10 +70,10 @@ const { handleImportFiles, handleImportFolder, handleDrop, handleClear } =
 const {
   previewItems,
   canExecute,
-  executeRename,
+  execute,
   setupProgressListener,
   cleanupProgressListener,
-} = useRename();
+} = useWorkspace();
 
 const tableMaxHeight = ref(500);
 
@@ -88,8 +86,7 @@ function onEditName(id: string, newName: string): void {
 }
 
 function updateTableHeight(): void {
-  // Reserve space for header (80px), import bar (52px), padding
-  tableMaxHeight.value = window.innerHeight - 230;
+  tableMaxHeight.value = window.innerHeight - 200;
 }
 
 onMounted(() => {
@@ -105,49 +102,48 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.rename-view {
+.workspace-view {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.page-header {
+.toolbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
-.header-left h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 4px;
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.page-desc {
+.file-count {
   font-size: 13px;
   color: #909399;
+  margin-left: 4px;
 }
 
-.rename-body {
+.workspace-body {
   display: flex;
   gap: 16px;
   flex: 1;
   min-height: 0;
 }
 
-.rename-main {
+.workspace-main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 0;
 }
 
-.rename-sidebar {
-  width: 320px;
+.workspace-sidebar {
+  width: 300px;
   flex-shrink: 0;
   border-left: 1px solid #e4e7ed;
   overflow-y: auto;

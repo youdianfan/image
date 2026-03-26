@@ -1,4 +1,8 @@
-import { pipeline, env, type TranslationPipeline } from "@huggingface/transformers";
+import {
+  pipeline,
+  env,
+  type TranslationPipeline,
+} from "@huggingface/transformers";
 
 export type ModelStatus = "not-downloaded" | "downloading" | "ready" | "error";
 
@@ -24,14 +28,54 @@ export function saveMirrorUrl(url: string): void {
   localStorage.setItem(MIRROR_STORAGE_KEY, url);
 }
 const STOP_WORDS = new Set([
-  "the", "a", "an", "is", "are", "was", "were",
-  "be", "been", "being", "have", "has", "had",
-  "do", "does", "did", "will", "would", "shall",
-  "should", "may", "might", "must", "can", "could",
-  "of", "at", "by", "for", "with", "about",
-  "to", "from", "up", "on", "in", "out",
-  "and", "but", "or", "nor", "not", "so",
-  "very", "just", "that", "this", "it",
+  "the",
+  "a",
+  "an",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "will",
+  "would",
+  "shall",
+  "should",
+  "may",
+  "might",
+  "must",
+  "can",
+  "could",
+  "of",
+  "at",
+  "by",
+  "for",
+  "with",
+  "about",
+  "to",
+  "from",
+  "up",
+  "on",
+  "in",
+  "out",
+  "and",
+  "but",
+  "or",
+  "nor",
+  "not",
+  "so",
+  "very",
+  "just",
+  "that",
+  "this",
+  "it",
 ]);
 
 class AiTranslator {
@@ -82,14 +126,14 @@ class AiTranslator {
     env.allowLocalModels = false;
 
     try {
-      this.translator = await pipeline("translation", MODEL_ID, {
+      this.translator = (await pipeline("translation", MODEL_ID, {
         progress_callback: (event: { status: string; progress?: number }) => {
           if (event.status === "progress" && event.progress != null) {
             this._progress = Math.round(event.progress);
             onProgress?.(this._progress);
           }
         },
-      }) as TranslationPipeline;
+      })) as TranslationPipeline;
 
       this._status = "ready";
       this._progress = 100;
