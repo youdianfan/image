@@ -22,6 +22,7 @@ const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "heic"]);
 export const useFileStore = defineStore("file", () => {
   const files = ref<ImageFile[]>([]);
   const loading = ref(false);
+  const translationVersion = ref(0);
 
   function createImageFile(
     f: { name: string; path: string; size: number; extension: string },
@@ -57,6 +58,7 @@ export const useFileStore = defineStore("file", () => {
           const workspaceStore = useWorkspaceStore();
           const formatted = convertName(translated, workspaceStore.rename.nameFormat);
           file.translatedName = `${formatted}.${file.extension}`;
+          translationVersion.value++;
         }
       } catch {
         // Keep original name on translation failure
@@ -182,6 +184,7 @@ export const useFileStore = defineStore("file", () => {
   return {
     files,
     loading,
+    translationVersion,
     importFiles,
     importFolder,
     addFilesFromPaths,

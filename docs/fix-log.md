@@ -86,3 +86,46 @@
 **修复**：在主进程的 `browser-window-created` 事件中，通过 `before-input-event` 监听 ESC 按键。当窗口处于全屏状态时，按 ESC 调用 `setFullScreen(false)` 退出全屏。
 
 **涉及文件**：`src/main/index.ts`
+
+---
+
+## #007 — 2026-03-26
+
+**问题**：导入含中文文件名的图片后，文件列表中的"新文件名"不会及时更新为翻译后的英文名，仍显示原始中文名。
+
+**原因**：`autoTranslateFiles()` 以 fire-and-forget 方式调用（未 await），翻译在后台异步完成后直接修改 `file.translatedName`，但 Vue 的 `computed`（`previewItems`）无法可靠检测到深层属性变更，导致不会重新计算预览。
+
+**修复**：在 `file.store` 中新增响应式计数器 `translationVersion`，每次单个文件翻译完成后递增。在 `useWorkspace` 的 `previewItems` computed 中读取该计数器以建立响应式依赖，确保每翻译完一个文件就立即刷新预览。
+
+**涉及文件**：`src/renderer/src/stores/file.store.ts`、`src/renderer/src/composables/useWorkspace.ts`
+
+---
+
+## #008 — 2026-03-26
+
+**功能**：文件列表图片预览与全屏查看器。
+
+**描述**：文件列表中新增 50×50 缩略图列，点击缩略图弹出全屏图片查看器，支持上/下张切换、缩放、旋转。
+
+**实现**：
+1. 注册 `local-image://` 自定义 Electron 协议，将本地绝对路径映射为可在渲染进程中加载的图片 URL，绕过 CSP 对 `file://` 的限制。
+2. 更新 CSP `img-src` 添加 `local-image:` 来源。
+3. `FileList.vue` 新增缩略图列（`el-image` + lazy 懒加载）和 `ElImageViewer` 全屏查看器组件。
+4. `useWorkspace.ts` 为每个预览项生成 `imageUrl` 字段。
+
+**涉及文件**：`src/main/index.ts`、`src/renderer/index.html`、`src/renderer/src/components/FileList.vue`、`src/renderer/src/composables/useWorkspace.ts`
+
+---
+
+## #009 — 2026-03-26
+
+**功能**：智能输出目录模式。
+
+**描述**：输出模式从 2 种扩展为 3 种：`autoDirectory`（默认，自动在源文件同级创建 `output` 子目录）、`customDirectory`（用户手动选择目录）、`overwrite`（覆盖原文件）。
+
+**实现**：
+1. `OutputConfig.mode` 类型扩展为 `"autoDirectory" | "customDirectory" | "overwrite"`，默认值改为 `"autoDirectory"`。
+2. `SettingsPanel.vue` 输出区域更新为 3 个 radio 选项，autoDirectory 模式下显示提示文字。
+3. `useWorkspace.ts` 中 `targetDir` 计算逻辑适配新模式：autoDirectory 模式下输出到 `sourceDir\output`；`canExecute`、`execute()` 中的相关判断同步更新。
+
+**涉及文件**：`src/renderer/src/stores/workspace.store.ts`、`src/renderer/src/components/SettingsPanel.vue`、`src/renderer/src/composables/useWorkspace.ts`

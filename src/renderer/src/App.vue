@@ -2,10 +2,7 @@
   <div class="app-layout">
     <!-- Top Navigation Bar -->
     <header class="top-nav">
-      <div class="nav-left">
-        <span class="app-logo">Image Rename AI</span>
-      </div>
-      <nav class="nav-tabs">
+      <nav class="nav-left">
         <router-link
           v-for="tab in navTabs"
           :key="tab.path"
@@ -17,6 +14,7 @@
           <span>{{ tab.label }}</span>
         </router-link>
       </nav>
+      <div class="nav-spacer"></div>
       <div class="nav-right">
         <router-link
           to="/settings"
@@ -122,23 +120,14 @@ const navTabs = [
 
 .nav-left {
   flex-shrink: 0;
-  -webkit-app-region: drag;
-}
-
-.app-logo {
-  font-size: 15px;
-  font-weight: 700;
-  color: #303133;
-  letter-spacing: 0.3px;
-  user-select: none;
-}
-
-.nav-tabs {
-  flex: 1;
   display: flex;
-  justify-content: center;
   gap: 4px;
   -webkit-app-region: no-drag;
+}
+
+.nav-spacer {
+  flex: 1;
+  -webkit-app-region: drag;
 }
 
 .nav-tab {

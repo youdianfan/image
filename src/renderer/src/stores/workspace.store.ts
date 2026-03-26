@@ -23,8 +23,8 @@ export interface CompressConfig {
 }
 
 export interface OutputConfig {
-  mode: "newDirectory" | "overwrite";
-  directory: string;
+  mode: "autoDirectory" | "customDirectory" | "overwrite";
+  directory: string; // 仅 customDirectory 模式使用
 }
 
 const SETTINGS_KEY = "workspace-settings";
@@ -64,7 +64,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   });
 
   const output = ref<OutputConfig>({
-    mode: "newDirectory",
+    mode: "autoDirectory",
     directory: "",
   });
 

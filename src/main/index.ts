@@ -24,10 +24,20 @@ protocol.registerSchemesAsPrivileged([
       corsEnabled: true,
     },
   },
+  {
+    scheme: "local-image",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
 ]);
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
+    title: "Image Rename AI",
     width: 1200,
     height: 800,
     minWidth: 900,
@@ -138,6 +148,16 @@ app.whenReady().then(() => {
       return new Response("Not Found", { status: 404 });
     }
     return net.fetch(pathToFileURL(absolutePath).toString());
+  });
+
+  // Serve local image files via local-image:// protocol
+  protocol.handle("local-image", (request) => {
+    const url = new URL(request.url);
+    const filePath = decodeURIComponent(url.searchParams.get("path") || "");
+    if (!filePath || !existsSync(filePath)) {
+      return new Response("Not Found", { status: 404 });
+    }
+    return net.fetch(pathToFileURL(filePath).toString());
   });
 
   app.on("browser-window-created", (_, window) => {

@@ -128,13 +128,18 @@
       <div class="section-body">
         <el-form label-position="top" size="small">
           <el-form-item>
-            <el-radio-group v-model="store.output.mode" size="small">
-              <el-radio value="newDirectory">输出到新目录</el-radio>
+            <el-radio-group v-model="store.output.mode" size="small" class="output-mode-group">
+              <el-radio value="autoDirectory">自动输出目录</el-radio>
+              <el-radio value="customDirectory">自定义目录</el-radio>
               <el-radio value="overwrite">覆盖原文件</el-radio>
             </el-radio-group>
           </el-form-item>
 
-          <el-form-item v-if="store.output.mode === 'newDirectory'">
+          <el-form-item v-if="store.output.mode === 'autoDirectory'">
+            <div class="auto-dir-hint">输出到源文件同级 output 目录</div>
+          </el-form-item>
+
+          <el-form-item v-if="store.output.mode === 'customDirectory'">
             <el-input
               v-model="store.output.directory"
               placeholder="点击选择输出目录"
@@ -264,5 +269,17 @@ async function selectOutputDir(): Promise<void> {
 
 .index-field .el-input-number {
   width: 100%;
+}
+
+.output-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auto-dir-hint {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
 }
 </style>

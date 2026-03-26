@@ -41,6 +41,8 @@ export function useWorkspace() {
   }
 
   const previewItems = computed<WorkspacePreviewItem[]>(() => {
+    // 读取翻译版本号，确保翻译完成后触发重新计算
+    void fileStore.translationVersion;
     const files = fileStore.files;
     if (files.length === 0) return [];
 
@@ -78,23 +80,28 @@ export function useWorkspace() {
 
       // Target directory
       let targetDir: string;
-      if (
-        wsStore.output.mode === "newDirectory" &&
+      const lastSep =
+        file.path.lastIndexOf("\\") !== -1
+          ? file.path.lastIndexOf("\\")
+          : file.path.lastIndexOf("/");
+      const sourceDir = file.path.substring(0, lastSep);
+
+      if (wsStore.output.mode === "autoDirectory") {
+        targetDir = sourceDir + "\\output";
+      } else if (
+        wsStore.output.mode === "customDirectory" &&
         wsStore.output.directory
       ) {
         targetDir = wsStore.output.directory;
       } else {
-        const lastSep =
-          file.path.lastIndexOf("\\") !== -1
-            ? file.path.lastIndexOf("\\")
-            : file.path.lastIndexOf("/");
-        targetDir = file.path.substring(0, lastSep);
+        targetDir = sourceDir;
       }
 
       return {
         id: file.id,
         originalName: file.name,
         originalPath: file.path,
+        imageUrl: "local-image://localhost?path=" + encodeURIComponent(file.path),
         newName,
         sizeText: formatFileSize(file.size),
         status: file.status,
@@ -130,7 +137,7 @@ export function useWorkspace() {
       fileStore.files.length > 0 &&
       !taskStore.currentTask &&
       wsStore.hasAnyAction &&
-      (wsStore.output.mode === "overwrite" || !!wsStore.output.directory)
+      (wsStore.output.mode !== "customDirectory" || !!wsStore.output.directory)
     );
   });
 
@@ -155,7 +162,7 @@ export function useWorkspace() {
     }
 
     if (
-      wsStore.output.mode === "newDirectory" &&
+      wsStore.output.mode === "customDirectory" &&
       !wsStore.output.directory
     ) {
       ElMessage.warning("请先选择输出目录");
@@ -186,14 +193,13 @@ export function useWorkspace() {
 
     try {
       // Step 1: Rename (or copy to target directory)
-      if (wsStore.rename.enabled || wsStore.output.mode === "newDirectory") {
+      const copyOnly = wsStore.output.mode !== "overwrite";
+      if (wsStore.rename.enabled || copyOnly) {
         const plan = items.map((item) => ({
           source: item.sourcePath,
           target: `${item.targetDir}\\${item.newName}`,
           id: item.id,
         }));
-
-        const copyOnly = wsStore.output.mode === "newDirectory";
         taskStore.updateProgress({ message: copyOnly ? "正在复制..." : "正在重命名..." });
         const renameResult = await window.api.executeRename(
           plan,
@@ -216,7 +222,7 @@ export function useWorkspace() {
       if (wsStore.compress.enabled) {
         // Determine which files to compress (renamed targets or originals)
         const filesToCompress =
-          wsStore.rename.enabled || wsStore.output.mode === "newDirectory"
+          wsStore.rename.enabled || copyOnly
             ? items.map((item) => `${item.targetDir}\\${item.newName}`)
             : items.map((item) => item.sourcePath);
 
@@ -227,7 +233,7 @@ export function useWorkspace() {
           outputFormat: wsStore.compress.outputFormat,
           // Compress in-place (files are already in target directory)
           outputDirectory:
-            wsStore.output.mode === "newDirectory"
+            wsStore.output.mode === "customDirectory"
               ? wsStore.output.directory
               : "",
         };

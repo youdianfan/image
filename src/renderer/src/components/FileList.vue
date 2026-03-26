@@ -10,6 +10,24 @@
     >
       <el-table-column type="index" label="#" width="50" />
 
+      <el-table-column label="预览" width="70" align="center">
+        <template #default="{ row, $index }">
+          <el-image
+            :src="row.imageUrl"
+            fit="cover"
+            class="thumb"
+            lazy
+            @click="openViewer($index)"
+          >
+            <template #error>
+              <div class="thumb-error">
+                <el-icon><PictureFilled /></el-icon>
+              </div>
+            </template>
+          </el-image>
+        </template>
+      </el-table-column>
+
       <el-table-column label="原文件名" min-width="180">
         <template #default="{ row }">
           <el-tooltip
@@ -87,24 +105,34 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-image-viewer
+      v-if="viewerVisible"
+      :url-list="imageUrlList"
+      :initial-index="viewerInitialIndex"
+      teleported
+      @close="viewerVisible = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { Right, WarningFilled, Delete } from "@element-plus/icons-vue";
+import { ref, computed } from "vue";
+import { Right, WarningFilled, Delete, PictureFilled } from "@element-plus/icons-vue";
+import { ElImageViewer } from "element-plus";
 
 export interface FileListItem {
   id: string;
   originalName: string;
   originalPath: string;
+  imageUrl: string;
   newName: string;
   sizeText: string;
   status: string;
   hasConflict: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
   items: FileListItem[];
   maxHeight?: number;
 }>();
@@ -114,6 +142,17 @@ const emit = defineEmits<{
   editName: [id: string, newName: string];
 }>();
 
+// Image viewer state
+const viewerVisible = ref(false);
+const viewerInitialIndex = ref(0);
+const imageUrlList = computed(() => props.items.map((item) => item.imageUrl));
+
+function openViewer(index: number): void {
+  viewerInitialIndex.value = index;
+  viewerVisible.value = true;
+}
+
+// Inline editing state
 const editingId = ref<string | null>(null);
 const editValue = ref("");
 
@@ -216,5 +255,29 @@ function statusLabel(status: string): string {
 .file-size {
   font-size: 12px;
   color: #909399;
+}
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.thumb:hover {
+  transform: scale(1.1);
+}
+
+.thumb-error {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  border-radius: 4px;
+  color: #c0c4cc;
+  font-size: 20px;
 }
 </style>
