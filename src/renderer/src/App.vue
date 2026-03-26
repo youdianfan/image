@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { markRaw } from "vue";
+import { markRaw, onMounted } from "vue";
 import {
   FolderOpened,
   Switch,
@@ -83,9 +83,16 @@ import {
 } from "@element-plus/icons-vue";
 import { useFileStore } from "@/stores/file.store";
 import { useTaskStore } from "@/stores/task.store";
+import { useAiStore } from "@/stores/ai.store";
 
 const fileStore = useFileStore();
 const taskStore = useTaskStore();
+const aiStore = useAiStore();
+
+// Auto-load AI model on app start
+onMounted(() => {
+  aiStore.loadModel();
+});
 
 const navTabs = [
   { path: "/workspace", label: "工作台", icon: markRaw(FolderOpened) },

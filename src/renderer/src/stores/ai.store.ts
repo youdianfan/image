@@ -1,35 +1,20 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import {
-  aiTranslator,
-  getSavedMirrorUrl,
-  saveMirrorUrl,
-  type ModelStatus,
-} from "@/services/aiTranslator";
+import { aiTranslator, type ModelStatus } from "@/services/aiTranslator";
 
 export const useAiStore = defineStore("ai", () => {
-  const modelStatus = ref<ModelStatus>("not-downloaded");
-  const downloadProgress = ref(0);
+  const modelStatus = ref<ModelStatus>("loading");
   const errorMessage = ref("");
-  const mirrorUrl = ref(getSavedMirrorUrl());
 
   const isReady = computed(() => modelStatus.value === "ready");
-  const isDownloading = computed(() => modelStatus.value === "downloading");
-
-  function setMirrorUrl(url: string): void {
-    mirrorUrl.value = url;
-    saveMirrorUrl(url);
-  }
+  const isLoading = computed(() => modelStatus.value === "loading");
 
   async function loadModel(): Promise<void> {
     try {
-      modelStatus.value = "downloading";
-      downloadProgress.value = 0;
+      modelStatus.value = "loading";
       errorMessage.value = "";
 
-      await aiTranslator.loadModel((progress) => {
-        downloadProgress.value = progress;
-      });
+      await aiTranslator.loadModel();
 
       modelStatus.value = "ready";
     } catch (err) {
@@ -40,18 +25,14 @@ export const useAiStore = defineStore("ai", () => {
 
   function syncStatus(): void {
     modelStatus.value = aiTranslator.status;
-    downloadProgress.value = aiTranslator.progress;
     errorMessage.value = aiTranslator.errorMessage;
   }
 
   return {
     modelStatus,
-    downloadProgress,
     errorMessage,
-    mirrorUrl,
     isReady,
-    isDownloading,
-    setMirrorUrl,
+    isLoading,
     loadModel,
     syncStatus,
   };

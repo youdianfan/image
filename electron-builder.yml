@@ -11,6 +11,9 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
   - "!models/**"
   - "!plans/**"
+extraResources:
+  - from: resources/models/
+    to: models/
 asarUnpack:
   - resources/**
   - node_modules/sharp/**

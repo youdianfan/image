@@ -1,5 +1,7 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from "electron";
 import { join } from "path";
+import { pathToFileURL } from "url";
+import { existsSync } from "fs";
 import { fileService } from "./services/file.service";
 import { renameService } from "./services/rename.service";
 import type {
@@ -10,6 +12,19 @@ import { imageService } from "./services/image.service";
 import type { CompressOptions } from "./services/image.service";
 
 const isDev = !app.isPackaged;
+
+// Register custom protocol for serving local model files
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "local-model",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -101,6 +116,25 @@ function registerIpcHandlers(): void {
 }
 
 app.whenReady().then(() => {
+  // Serve local model files via local-model:// protocol
+  const modelsDir = isDev
+    ? join(app.getAppPath(), "resources", "models")
+    : join(process.resourcesPath, "models");
+
+  protocol.handle("local-model", (request) => {
+    // URL format: local-model://localhost/Xenova/opus-mt-zh-en/resolve/main/config.json
+    // We need to strip /resolve/main/ and map to local file
+    const url = new URL(request.url);
+    const filePath = decodeURIComponent(url.pathname)
+      .replace(/\/resolve\/main\/?/, "/");
+    const absolutePath = join(modelsDir, filePath);
+
+    if (!existsSync(absolutePath)) {
+      return new Response("Not Found", { status: 404 });
+    }
+    return net.fetch(pathToFileURL(absolutePath).toString());
+  });
+
   app.on("browser-window-created", (_, window) => {
     // Open DevTools with F12 in dev mode
     if (isDev) {

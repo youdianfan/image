@@ -16,29 +16,6 @@
           <span class="info-value">Helsinki-NLP/opus-mt-zh-en (中→英翻译)</span>
         </div>
         <div class="info-row">
-          <span class="info-label">大小</span>
-          <span class="info-value">~300MB（首次下载后缓存到本地）</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">下载源</span>
-          <span class="info-value">
-            <el-select
-              :model-value="aiStore.mirrorUrl"
-              size="small"
-              style="width: 280px"
-              :disabled="aiStore.isDownloading"
-              @change="aiStore.setMirrorUrl"
-            >
-              <el-option
-                v-for="opt in mirrorOptions"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
-            </el-select>
-          </span>
-        </div>
-        <div class="info-row">
           <span class="info-label">状态</span>
           <span class="info-value">
             <el-tag
@@ -49,28 +26,20 @@
               已就绪
             </el-tag>
             <el-tag
-              v-else-if="aiStore.modelStatus === 'downloading'"
+              v-else-if="aiStore.modelStatus === 'loading'"
               size="small"
             >
-              下载中 {{ aiStore.downloadProgress }}%
+              加载中...
             </el-tag>
             <el-tag
               v-else-if="aiStore.modelStatus === 'error'"
               type="danger"
               size="small"
             >
-              错误
+              加载失败
             </el-tag>
-            <el-tag v-else type="info" size="small"> 未下载 </el-tag>
           </span>
         </div>
-
-        <el-progress
-          v-if="aiStore.isDownloading"
-          :percentage="aiStore.downloadProgress"
-          :stroke-width="8"
-          style="margin: 12px 0"
-        />
 
         <el-alert
           v-if="aiStore.modelStatus === 'error'"
@@ -82,18 +51,12 @@
 
         <div class="ai-actions">
           <el-button
-            v-if="
-              aiStore.modelStatus === 'not-downloaded' ||
-              aiStore.modelStatus === 'error'
-            "
+            v-if="aiStore.modelStatus === 'error'"
             type="primary"
-            :loading="aiStore.isDownloading"
-            @click="downloadModel"
+            :loading="aiStore.isLoading"
+            @click="retryLoad"
           >
-            下载模型
-          </el-button>
-          <el-button v-if="aiStore.isDownloading" disabled>
-            正在下载...
+            重新加载
           </el-button>
           <span v-if="aiStore.modelStatus === 'ready'" class="ready-text">
             AI 翻译已启用，可在格式转换和批量重命名中使用
@@ -101,8 +64,7 @@
         </div>
 
         <p class="ai-desc">
-          下载后可启用中文→英文智能翻译，用于图片命名和格式转换。
-          模型运行在本地浏览器端，无需联网即可使用。
+          翻译模型已内置，无需联网下载。模型运行在本地，无需联网即可使用。
         </p>
       </div>
     </el-card>
@@ -123,10 +85,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useAiStore } from "@/stores/ai.store";
-import { MIRROR_OPTIONS } from "@/services/aiTranslator";
 
 const aiStore = useAiStore();
-const mirrorOptions = MIRROR_OPTIONS;
 const appVersion = ref("1.0.0");
 
 onMounted(async () => {
@@ -138,7 +98,7 @@ onMounted(async () => {
   aiStore.syncStatus();
 });
 
-async function downloadModel(): Promise<void> {
+async function retryLoad(): Promise<void> {
   await aiStore.loadModel();
 }
 </script>
