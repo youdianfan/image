@@ -1,6 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { fileService } from './services/file.service'
+import { renameService } from './services/rename.service'
+import type { RenamePlanItem, ConflictStrategy } from './services/rename.service'
 
 const isDev = !app.isPackaged
 
@@ -49,13 +51,20 @@ function registerIpcHandlers(): void {
     return fileService.getFileInfo(filePath)
   })
 
-  // Rename operations (stub - Phase 2)
-  ipcMain.handle('rename:preview', async () => {
-    return []
+  // Rename operations
+  ipcMain.handle('rename:execute', async (event, plan: RenamePlanItem[], conflictStrategy?: ConflictStrategy) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (!window) throw new Error('No window found')
+    return renameService.execute(plan, window, conflictStrategy)
   })
 
-  ipcMain.handle('rename:execute', async () => {
-    return { success: 0, failed: 0 }
+  // Directory selection
+  ipcMain.handle('dialog:selectDirectory', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled) return null
+    return result.filePaths[0]
   })
 
   // Compression operations (stub - Phase 4)

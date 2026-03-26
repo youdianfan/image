@@ -7,10 +7,12 @@ const api = {
   getFileInfo: (filePath: string): Promise<unknown> => ipcRenderer.invoke('file:getInfo', filePath),
 
   // Rename operations
-  previewRename: (files: unknown[], rules: unknown): Promise<unknown[]> =>
-    ipcRenderer.invoke('rename:preview', files, rules),
-  executeRename: (plan: unknown[]): Promise<unknown> =>
-    ipcRenderer.invoke('rename:execute', plan),
+  executeRename: (plan: unknown[], conflictStrategy?: string): Promise<unknown> =>
+    ipcRenderer.invoke('rename:execute', plan, conflictStrategy),
+
+  // Directory selection
+  selectDirectory: (): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:selectDirectory'),
 
   // Compression operations
   compressImages: (files: string[], options: unknown): Promise<void> =>

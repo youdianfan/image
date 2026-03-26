@@ -6,19 +6,17 @@ export interface FileInfo {
   isDirectory: boolean
 }
 
-export interface RenamePreviewItem {
-  original: string
-  renamed: string
+export interface RenamePlanItem {
+  source: string
+  target: string
+  id: string
 }
 
 export interface RenameResult {
   success: number
   failed: number
-}
-
-export interface RenamePlanItem {
-  source: string
-  target: string
+  skipped: number
+  errors: Array<{ source: string; error: string }>
 }
 
 export interface CompressOptions {
@@ -30,11 +28,12 @@ export interface CompressOptions {
 }
 
 export interface TaskProgress {
-  taskId: string
-  progress: number
-  total: number
+  id: string
   completed: number
-  message: string
+  total: number
+  fileId: string
+  status: string
+  error?: string
 }
 
 export interface ElectronAPI {
@@ -44,8 +43,10 @@ export interface ElectronAPI {
   getFileInfo: (filePath: string) => Promise<FileInfo>
 
   // Rename operations
-  previewRename: (files: FileInfo[], rules: unknown) => Promise<RenamePreviewItem[]>
-  executeRename: (plan: RenamePlanItem[]) => Promise<RenameResult>
+  executeRename: (plan: RenamePlanItem[], conflictStrategy?: string) => Promise<RenameResult>
+
+  // Directory selection
+  selectDirectory: () => Promise<string | null>
 
   // Compression operations
   compressImages: (files: string[], options: CompressOptions) => Promise<void>
