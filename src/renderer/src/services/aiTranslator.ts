@@ -1,8 +1,28 @@
-import { pipeline, type TranslationPipeline } from "@huggingface/transformers";
+import { pipeline, env, type TranslationPipeline } from "@huggingface/transformers";
 
 export type ModelStatus = "not-downloaded" | "downloading" | "ready" | "error";
 
 const MODEL_ID = "Xenova/opus-mt-zh-en";
+
+// Mirror sources for model download
+export const MIRROR_OPTIONS = [
+  { label: "HF 镜像 (中国大陆推荐)", value: "https://hf-mirror.com" },
+  { label: "Hugging Face 官方", value: "https://huggingface.co" },
+] as const;
+
+const MIRROR_STORAGE_KEY = "ai-mirror-url";
+
+export function getSavedMirrorUrl(): string {
+  try {
+    return localStorage.getItem(MIRROR_STORAGE_KEY) || MIRROR_OPTIONS[0].value;
+  } catch {
+    return MIRROR_OPTIONS[0].value;
+  }
+}
+
+export function saveMirrorUrl(url: string): void {
+  localStorage.setItem(MIRROR_STORAGE_KEY, url);
+}
 const STOP_WORDS = new Set([
   "the", "a", "an", "is", "are", "was", "were",
   "be", "been", "being", "have", "has", "had",
@@ -55,6 +75,11 @@ class AiTranslator {
     this._status = "downloading";
     this._progress = 0;
     this._errorMessage = "";
+
+    // Set mirror source before loading
+    const mirrorUrl = getSavedMirrorUrl();
+    env.remoteHost = mirrorUrl;
+    env.allowLocalModels = false;
 
     try {
       this.translator = await pipeline("translation", MODEL_ID, {

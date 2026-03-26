@@ -20,6 +20,25 @@
           <span class="info-value">~300MB（首次下载后缓存到本地）</span>
         </div>
         <div class="info-row">
+          <span class="info-label">下载源</span>
+          <span class="info-value">
+            <el-select
+              :model-value="aiStore.mirrorUrl"
+              size="small"
+              style="width: 280px"
+              :disabled="aiStore.isDownloading"
+              @change="aiStore.setMirrorUrl"
+            >
+              <el-option
+                v-for="opt in mirrorOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </span>
+        </div>
+        <div class="info-row">
           <span class="info-label">状态</span>
           <span class="info-value">
             <el-tag v-if="aiStore.modelStatus === 'ready'" type="success" size="small">
@@ -95,8 +114,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useAiStore } from "@/stores/ai.store";
+import { MIRROR_OPTIONS } from "@/services/aiTranslator";
 
 const aiStore = useAiStore();
+const mirrorOptions = MIRROR_OPTIONS;
 const appVersion = ref("1.0.0");
 
 onMounted(async () => {
