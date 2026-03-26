@@ -77,7 +77,6 @@
 import { markRaw, onMounted } from "vue";
 import {
   FolderOpened,
-  Switch,
   Setting,
   Close,
 } from "@element-plus/icons-vue";
@@ -96,7 +95,6 @@ onMounted(() => {
 
 const navTabs = [
   { path: "/workspace", label: "工作台", icon: markRaw(FolderOpened) },
-  { path: "/format", label: "格式转换", icon: markRaw(Switch) },
 ];
 </script>
 

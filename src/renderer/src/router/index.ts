@@ -13,12 +13,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: "Workspace" },
   },
   {
-    path: "/format",
-    name: "Format",
-    component: () => import("@/views/FormatView.vue"),
-    meta: { title: "Format Convert" },
-  },
-  {
     path: "/settings",
     name: "Settings",
     component: () => import("@/views/SettingsView.vue"),

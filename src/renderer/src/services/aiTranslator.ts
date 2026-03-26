@@ -96,6 +96,13 @@ class AiTranslator {
     // Load from local-model:// protocol (served by Electron main process)
     env.remoteHost = "local-model://localhost";
     env.allowLocalModels = false;
+    env.useBrowserCache = false;
+
+    // Use locally bundled ONNX Runtime WASM files (from src/renderer/public/)
+    if (env.backends?.onnx?.wasm) {
+      env.backends.onnx.wasm.wasmPaths = import.meta.env.BASE_URL;
+      env.backends.onnx.wasm.proxy = false;
+    }
 
     try {
       this.translator = (await (pipeline as Function)(

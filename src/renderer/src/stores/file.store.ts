@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { aiTranslator } from "@/services/aiTranslator";
-import { containsChinese } from "@/utils/nameConverter";
+import { containsChinese, convertName } from "@/utils/nameConverter";
+import { useWorkspaceStore } from "@/stores/workspace.store";
 
 export interface ImageFile {
   id: string;
@@ -53,14 +54,9 @@ export const useFileStore = defineStore("file", () => {
       try {
         const translated = await aiTranslator.translate(nameWithoutExt);
         if (translated) {
-          // Convert to kebab-case style filename
-          const kebabName = translated
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "")
-            .replace(/-{2,}/g, "-")
-            .replace(/^-|-$/g, "");
-          file.translatedName = `${kebabName}.${file.extension}`;
+          const workspaceStore = useWorkspaceStore();
+          const formatted = convertName(translated, workspaceStore.rename.nameFormat);
+          file.translatedName = `${formatted}.${file.extension}`;
         }
       } catch {
         // Keep original name on translation failure

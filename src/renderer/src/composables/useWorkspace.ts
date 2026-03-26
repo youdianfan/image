@@ -9,6 +9,7 @@ import {
   truncateFilename,
   formatFileSize,
 } from "@/utils/filename-sanitizer";
+import { containsChinese } from "@/utils/nameConverter";
 import { detectAndResolveConflicts } from "@/utils/conflict-detector";
 import type { FileListItem } from "@/components/FileList.vue";
 
@@ -50,13 +51,24 @@ export function useWorkspace() {
 
       if (file.hasManualOverride) {
         newName = file.newName;
-      } else if (wsStore.rename.enabled) {
-        const context = buildContext(file.name, file.extension, index, rule, file.translatedName);
-        newName = applyTemplate(rule.template, context, rule);
-        newName = sanitizeFilename(newName);
-        newName = truncateFilename(newName);
       } else {
-        newName = file.name;
+        const nameWithoutExt = file.name.replace(/\.[^.]+$/, "");
+        const isChinese = containsChinese(nameWithoutExt);
+        const wasTranslated = isChinese && file.translatedName !== file.name;
+
+        if (wsStore.rename.enabled && wasTranslated) {
+          // Chinese file with translation: apply template to translated name
+          const context = buildContext(file.name, file.extension, index, rule, file.translatedName);
+          newName = applyTemplate(rule.template, context, rule);
+          newName = sanitizeFilename(newName);
+          newName = truncateFilename(newName);
+        } else if (isChinese && !wasTranslated) {
+          // Chinese file not yet translated: show original (translation pending)
+          newName = file.name;
+        } else {
+          // English file: keep original name
+          newName = file.name;
+        }
       }
 
       // Target directory

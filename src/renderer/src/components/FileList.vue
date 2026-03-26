@@ -45,7 +45,7 @@
               <span
                 class="new-name"
                 :class="{ 'has-conflict': row.hasConflict }"
-                @dblclick="startEdit(row)"
+                @click="startEdit(row)"
               >
                 {{ row.newName }}
               </span>

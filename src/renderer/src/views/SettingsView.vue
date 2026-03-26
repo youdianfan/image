@@ -59,12 +59,48 @@
             重新加载
           </el-button>
           <span v-if="aiStore.modelStatus === 'ready'" class="ready-text">
-            AI 翻译已启用，可在格式转换和批量重命名中使用
+            AI 翻译已启用，导入中文图片时自动翻译为英文命名
           </span>
         </div>
 
         <p class="ai-desc">
           翻译模型已内置，无需联网下载。模型运行在本地，无需联网即可使用。
+        </p>
+      </div>
+    </el-card>
+
+    <!-- Naming Format -->
+    <el-card style="margin-bottom: 16px">
+      <template #header>
+        <span>命名规则</span>
+      </template>
+      <div class="naming-section">
+        <div class="info-row">
+          <span class="info-label">格式</span>
+          <span class="info-value">
+            <el-select
+              :model-value="workspaceStore.rename.nameFormat"
+              size="small"
+              style="width: 220px"
+              @change="onFormatChange"
+            >
+              <el-option
+                v-for="f in ALL_FORMATS"
+                :key="f.format"
+                :label="`${f.label}  (${f.example})`"
+                :value="f.format"
+              />
+            </el-select>
+          </span>
+        </div>
+        <div class="format-preview">
+          <span class="preview-label">示例：</span>
+          <span class="preview-before">白色的猫.jpg</span>
+          <span class="preview-arrow">&rarr;</span>
+          <code class="preview-after">{{ formatExample }}.jpg</code>
+        </div>
+        <p class="ai-desc">
+          中文图片导入时，AI 翻译后将按此格式生成英文文件名。
         </p>
       </div>
     </el-card>
@@ -83,11 +119,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAiStore } from "@/stores/ai.store";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { ALL_FORMATS, convertName, type NameFormat } from "@/utils/nameConverter";
 
 const aiStore = useAiStore();
+const workspaceStore = useWorkspaceStore();
 const appVersion = ref("1.0.0");
+
+const formatExample = computed(() => {
+  return convertName("white cat", workspaceStore.rename.nameFormat);
+});
+
+function onFormatChange(format: NameFormat): void {
+  workspaceStore.updateRename({ nameFormat: format });
+}
 
 onMounted(async () => {
   try {
@@ -120,7 +167,8 @@ async function retryLoad(): Promise<void> {
   color: #909399;
 }
 
-.ai-model-info {
+.ai-model-info,
+.naming-section {
   font-size: 14px;
 }
 
@@ -153,6 +201,35 @@ async function retryLoad(): Promise<void> {
   font-size: 12px;
   color: #c0c4cc;
   line-height: 1.6;
+}
+
+.format-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+  font-size: 13px;
+}
+
+.preview-label {
+  color: #909399;
+}
+
+.preview-before {
+  color: #606266;
+}
+
+.preview-arrow {
+  color: #c0c4cc;
+}
+
+.preview-after {
+  font-family: "Consolas", "Monaco", monospace;
+  color: #409eff;
+  background: #ecf5ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
 }
 
 .about-desc {

@@ -1,4 +1,15 @@
-import type { RenameRule } from "@/stores/rename.store";
+export interface RenameRule {
+  template: string;
+  type: string;
+  module: string;
+  startIndex: number;
+  indexStep: number;
+  indexDigits: number;
+  conflictStrategy: string;
+  outputMode: string;
+  outputDirectory: string;
+  preserveStructure: boolean;
+}
 
 export interface TemplateContext {
   original: string;

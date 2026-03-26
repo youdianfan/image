@@ -1,4 +1,4 @@
-import type { ConflictStrategy } from "@/stores/rename.store";
+import type { ConflictStrategy } from "@/stores/workspace.store";
 
 export interface ConflictItem {
   id: string;
