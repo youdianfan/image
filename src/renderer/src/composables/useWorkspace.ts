@@ -241,8 +241,10 @@ export function useWorkspace() {
       taskStore.completeTask();
       ElMessage.success("处理完成");
     } catch {
-      taskStore.updateProgress({ status: "failed", message: "处理失败" });
+      taskStore.failTask("处理失败");
       ElMessage.error("处理过程中发生错误");
+    } finally {
+      taskStore.clearTask();
     }
   }
 
