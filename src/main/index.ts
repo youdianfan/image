@@ -6,6 +6,8 @@ import type {
   RenamePlanItem,
   ConflictStrategy,
 } from "./services/rename.service";
+import { imageService } from "./services/image.service";
+import type { CompressOptions } from "./services/image.service";
 
 const isDev = !app.isPackaged;
 
@@ -77,9 +79,19 @@ function registerIpcHandlers(): void {
     return result.filePaths[0];
   });
 
-  // Compression operations (stub - Phase 4)
-  ipcMain.handle("compress:execute", async () => {
-    return;
+  // Compression operations
+  ipcMain.handle(
+    "compress:execute",
+    async (event, filePaths: string[], options: CompressOptions) => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      if (!window) throw new Error("No window found");
+      return imageService.compressImages(filePaths, options, window);
+    },
+  );
+
+  // Image metadata
+  ipcMain.handle("file:getImageMetadata", async (_event, filePath: string) => {
+    return imageService.getImageMetadata(filePath);
   });
 
   // App info

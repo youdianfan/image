@@ -19,6 +19,14 @@ export interface RenameResult {
   errors: Array<{ source: string; error: string }>;
 }
 
+export interface CompressResult {
+  success: number;
+  failed: number;
+  totalOriginalSize: number;
+  totalCompressedSize: number;
+  errors: Array<{ source: string; error: string }>;
+}
+
 export interface CompressOptions {
   quality: number;
   scale: number;
@@ -52,7 +60,15 @@ export interface ElectronAPI {
   selectDirectory: () => Promise<string | null>;
 
   // Compression operations
-  compressImages: (files: string[], options: CompressOptions) => Promise<void>;
+  compressImages: (
+    files: string[],
+    options: CompressOptions,
+  ) => Promise<CompressResult>;
+
+  // Image metadata
+  getImageMetadata: (
+    filePath: string,
+  ) => Promise<{ width: number; height: number; format: string }>;
 
   // Task system events
   onTaskProgress: (

@@ -20,8 +20,14 @@ const api = {
     ipcRenderer.invoke("dialog:selectDirectory"),
 
   // Compression operations
-  compressImages: (files: string[], options: unknown): Promise<void> =>
+  compressImages: (files: string[], options: unknown): Promise<unknown> =>
     ipcRenderer.invoke("compress:execute", files, options),
+
+  // Image metadata
+  getImageMetadata: (
+    filePath: string,
+  ): Promise<{ width: number; height: number; format: string }> =>
+    ipcRenderer.invoke("file:getImageMetadata", filePath),
 
   // Task system (main -> renderer events)
   onTaskProgress: (callback: (...args: unknown[]) => void): void => {
