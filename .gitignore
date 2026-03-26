@@ -36,6 +36,9 @@ release/
 # TypeScript cache
 *.tsbuildinfo
 
+# ESLint cache
+.eslintcache
+
 # Auto-import generated files
 src/renderer/src/auto-imports.d.ts
 src/renderer/src/components.d.ts
