@@ -49,6 +49,10 @@ export interface ElectronAPI {
   selectFiles: () => Promise<FileInfo[]>;
   selectFolder: () => Promise<FileInfo[]>;
   getFileInfo: (filePath: string) => Promise<FileInfo>;
+  scanDirectory: (dirPath: string) => Promise<FileInfo[]>;
+
+  // Drag-and-drop
+  getLastDropPaths: () => string[];
 
   // Rename operations
   executeRename: (

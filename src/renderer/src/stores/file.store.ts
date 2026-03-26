@@ -100,11 +100,24 @@ export const useFileStore = defineStore("file", () => {
     loading.value = true;
     try {
       for (const filePath of paths) {
-        if (isDuplicate(filePath)) continue;
-        const ext = filePath.split(".").pop()?.toLowerCase() || "";
-        if (!IMAGE_EXTENSIONS.has(ext)) continue;
         try {
           const info = await window.api.getFileInfo(filePath);
+
+          // If it's a directory, scan it for image files
+          if (info.isDirectory) {
+            const dirFiles = await window.api.scanDirectory(filePath);
+            const newFiles = dirFiles
+              .filter((f) => !isDuplicate(f.path))
+              .map((f, i) => createImageFile(f, files.value.length + i));
+            files.value.push(...newFiles);
+            autoTranslateFiles(newFiles);
+            continue;
+          }
+
+          // Single file: check extension and add
+          if (isDuplicate(filePath)) continue;
+          const ext = filePath.split(".").pop()?.toLowerCase() || "";
+          if (!IMAGE_EXTENSIONS.has(ext)) continue;
           const newFile = createImageFile(info, files.value.length);
           files.value.push(newFile);
           autoTranslateFiles([newFile]);

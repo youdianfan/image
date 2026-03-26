@@ -82,8 +82,6 @@ const emit = defineEmits<{
 
 const isDragOver = ref(false);
 
-const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "heic"]);
-
 function onDragOver(): void {
   isDragOver.value = true;
 }
@@ -97,19 +95,8 @@ function onDrop(event: DragEvent): void {
   const files = event.dataTransfer?.files;
   if (!files || files.length === 0) return;
 
-  const paths: string[] = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    // In Electron with sandbox:false, File.path is available
-    const filePath = (file as File & { path: string }).path;
-    if (filePath) {
-      const ext = filePath.split(".").pop()?.toLowerCase() || "";
-      if (IMAGE_EXTENSIONS.has(ext)) {
-        paths.push(filePath);
-      }
-    }
-  }
-
+  // Retrieve paths stored by preload's capture-phase drop handler
+  const paths = window.api.getLastDropPaths().filter(Boolean);
   if (paths.length > 0) {
     emit("drop", paths);
   }

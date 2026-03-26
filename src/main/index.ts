@@ -71,6 +71,10 @@ function registerIpcHandlers(): void {
     return fileService.getFileInfo(filePath);
   });
 
+  ipcMain.handle("file:scanDirectory", async (_event, dirPath: string) => {
+    return fileService.scanDirectory(dirPath);
+  });
+
   // Rename operations
   ipcMain.handle(
     "rename:execute",
@@ -137,15 +141,18 @@ app.whenReady().then(() => {
   });
 
   app.on("browser-window-created", (_, window) => {
-    // Open DevTools with F12 in dev mode
-    if (isDev) {
-      window.webContents.on("before-input-event", (event, input) => {
-        if (input.key === "F12") {
-          window.webContents.toggleDevTools();
-          event.preventDefault();
-        }
-      });
-    }
+    window.webContents.on("before-input-event", (event, input) => {
+      // ESC exits fullscreen
+      if (input.key === "Escape" && window.isFullScreen()) {
+        window.setFullScreen(false);
+        event.preventDefault();
+      }
+      // F12 toggles DevTools in dev mode
+      if (isDev && input.key === "F12") {
+        window.webContents.toggleDevTools();
+        event.preventDefault();
+      }
+    });
   });
 
   registerIpcHandlers();

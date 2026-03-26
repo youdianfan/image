@@ -100,7 +100,7 @@ class AiTranslator {
 
     // Use locally bundled ONNX Runtime WASM files (from src/renderer/public/)
     if (env.backends?.onnx?.wasm) {
-      env.backends.onnx.wasm.wasmPaths = import.meta.env.BASE_URL;
+      env.backends.onnx.wasm.wasmPaths = new URL(import.meta.env.BASE_URL, location.href).href;
       env.backends.onnx.wasm.proxy = false;
     }
 
