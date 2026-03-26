@@ -28,9 +28,21 @@ export const useTaskStore = defineStore("task", () => {
   function completeTask(): void {
     if (currentTask.value) {
       currentTask.value.status = "done";
+      currentTask.value.progress = 100;
       taskHistory.value.push({ ...currentTask.value });
-      currentTask.value = null;
     }
+  }
+
+  function failTask(message: string): void {
+    if (currentTask.value) {
+      currentTask.value.status = "failed";
+      currentTask.value.message = message;
+      taskHistory.value.push({ ...currentTask.value });
+    }
+  }
+
+  function clearTask(): void {
+    currentTask.value = null;
   }
 
   return {
@@ -39,5 +51,7 @@ export const useTaskStore = defineStore("task", () => {
     setCurrentTask,
     updateProgress,
     completeTask,
+    failTask,
+    clearTask,
   };
 });

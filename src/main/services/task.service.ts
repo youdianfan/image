@@ -1,8 +1,8 @@
-// Task queue service - Phase 5 implementation
+// Task service - currently rename and compress handle their own progress.
+// This module is reserved for future queue management if needed (V2+).
+
 export class TaskService {
-  // Task queue with concurrency control (default 4)
-  // Pause / resume / retry
-  // Progress broadcast via IPC
+  // Future: concurrent task queue, pause/resume, retry
 }
 
 export const taskService = new TaskService();

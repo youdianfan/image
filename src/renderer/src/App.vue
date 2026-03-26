@@ -37,12 +37,25 @@
       <!-- Status Bar -->
       <el-footer class="status-bar" height="36px">
         <div class="status-left">
-          <span v-if="taskStore.currentTask">
-            {{ taskStore.currentTask.message }}
-            ({{ taskStore.currentTask.completed }}/{{
-              taskStore.currentTask.total
-            }})
-          </span>
+          <template v-if="taskStore.currentTask">
+            <span class="task-message">{{ taskStore.currentTask.message }}</span>
+            <el-progress
+              :percentage="taskStore.currentTask.progress"
+              :stroke-width="10"
+              :show-text="false"
+              class="task-progress"
+              :status="taskStore.currentTask.status === 'failed' ? 'exception' : undefined"
+            />
+            <span class="task-percent">{{ taskStore.currentTask.progress }}%</span>
+            <el-button
+              v-if="taskStore.currentTask.status === 'done' || taskStore.currentTask.status === 'failed'"
+              size="small"
+              text
+              @click="taskStore.clearTask()"
+            >
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </template>
           <span v-else>就绪</span>
         </div>
         <div class="status-right">
@@ -61,6 +74,7 @@ import {
   Switch,
   PictureFilled,
   Setting,
+  Close,
 } from "@element-plus/icons-vue";
 import { useFileStore } from "@/stores/file.store";
 import { useTaskStore } from "@/stores/task.store";
@@ -132,5 +146,18 @@ const currentRoute = computed(() => route.path);
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.task-message {
+  white-space: nowrap;
+}
+
+.task-progress {
+  width: 120px;
+}
+
+.task-percent {
+  font-size: 11px;
+  min-width: 32px;
 }
 </style>
