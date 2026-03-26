@@ -31,8 +31,12 @@ export function buildContext(
   extension: string,
   position: number,
   rule: RenameRule,
+  translatedName?: string,
 ): TemplateContext {
-  const original = fileName.replace(/\.[^.]+$/, "");
+  // Use translated name if provided, otherwise extract from fileName
+  const original = translatedName
+    ? translatedName.replace(/\.[^.]+$/, "")
+    : fileName.replace(/\.[^.]+$/, "");
   return {
     original,
     extension,

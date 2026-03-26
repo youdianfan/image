@@ -51,7 +51,7 @@ export function useWorkspace() {
       if (file.hasManualOverride) {
         newName = file.newName;
       } else if (wsStore.rename.enabled) {
-        const context = buildContext(file.name, file.extension, index, rule);
+        const context = buildContext(file.name, file.extension, index, rule, file.translatedName);
         newName = applyTemplate(rule.template, context, rule);
         newName = sanitizeFilename(newName);
         newName = truncateFilename(newName);

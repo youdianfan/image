@@ -1,5 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { aiTranslator } from "@/services/aiTranslator";
+import { containsChinese } from "@/utils/nameConverter";
 
 export interface ImageFile {
   id: string;
@@ -8,6 +10,7 @@ export interface ImageFile {
   size: number;
   extension: string;
   newName: string;
+  translatedName: string; // AI-translated name (or original if no Chinese)
   status: "pending" | "processing" | "done" | "error";
   error?: string;
   hasManualOverride: boolean;
@@ -30,9 +33,39 @@ export const useFileStore = defineStore("file", () => {
       size: f.size,
       extension: f.extension,
       newName: f.name,
+      translatedName: f.name, // Will be updated by auto-translate
       status: "pending",
       hasManualOverride: false,
     };
+  }
+
+  /**
+   * Auto-translate Chinese filenames to English using AI.
+   * Non-blocking: updates translatedName in-place when translation completes.
+   */
+  async function autoTranslateFiles(newFiles: ImageFile[]): Promise<void> {
+    if (!aiTranslator.isReady()) return;
+
+    for (const file of newFiles) {
+      const nameWithoutExt = file.name.replace(/\.[^.]+$/, "");
+      if (!containsChinese(nameWithoutExt)) continue;
+
+      try {
+        const translated = await aiTranslator.translate(nameWithoutExt);
+        if (translated) {
+          // Convert to kebab-case style filename
+          const kebabName = translated
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "")
+            .replace(/-{2,}/g, "-")
+            .replace(/^-|-$/g, "");
+          file.translatedName = `${kebabName}.${file.extension}`;
+        }
+      } catch {
+        // Keep original name on translation failure
+      }
+    }
   }
 
   function isDuplicate(filePath: string): boolean {
@@ -47,6 +80,7 @@ export const useFileStore = defineStore("file", () => {
         .filter((f) => !isDuplicate(f.path))
         .map((f, i) => createImageFile(f, i));
       files.value.push(...newFiles);
+      autoTranslateFiles(newFiles);
     } finally {
       loading.value = false;
     }
@@ -60,6 +94,7 @@ export const useFileStore = defineStore("file", () => {
         .filter((f) => !isDuplicate(f.path))
         .map((f, i) => createImageFile(f, i));
       files.value.push(...newFiles);
+      autoTranslateFiles(newFiles);
     } finally {
       loading.value = false;
     }
@@ -74,7 +109,9 @@ export const useFileStore = defineStore("file", () => {
         if (!IMAGE_EXTENSIONS.has(ext)) continue;
         try {
           const info = await window.api.getFileInfo(filePath);
-          files.value.push(createImageFile(info, files.value.length));
+          const newFile = createImageFile(info, files.value.length);
+          files.value.push(newFile);
+          autoTranslateFiles([newFile]);
         } catch {
           // Skip files that can't be read
         }

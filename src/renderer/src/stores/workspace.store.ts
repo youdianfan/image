@@ -28,7 +28,7 @@ export interface OutputConfig {
 export const useWorkspaceStore = defineStore("workspace", () => {
   const rename = ref<RenameConfig>({
     enabled: true,
-    template: "{original}-{index}",
+    template: "{original}",
     startIndex: 1,
     indexStep: 1,
     indexDigits: 3,
