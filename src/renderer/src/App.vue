@@ -1,74 +1,67 @@
 <template>
-  <el-container class="app-container">
-    <!-- Left Sidebar -->
-    <el-aside width="200px">
-      <div class="sidebar">
-        <div class="sidebar-header">
-          <h1 class="app-title">Image Rename AI</h1>
-        </div>
-        <el-menu :default-active="currentRoute" router class="sidebar-menu">
-          <el-menu-item index="/rename">
-            <el-icon><EditPen /></el-icon>
-            <span>批量重命名</span>
-          </el-menu-item>
-          <el-menu-item index="/format">
-            <el-icon><Switch /></el-icon>
-            <span>格式转换</span>
-          </el-menu-item>
-          <el-menu-item index="/compress">
-            <el-icon><PictureFilled /></el-icon>
-            <span>图片压缩</span>
-          </el-menu-item>
-          <el-menu-item index="/settings">
-            <el-icon><Setting /></el-icon>
-            <span>设置</span>
-          </el-menu-item>
-        </el-menu>
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <span class="app-logo">Image Rename AI</span>
       </div>
-    </el-aside>
+      <nav class="nav-tabs">
+        <router-link
+          v-for="tab in navTabs"
+          :key="tab.path"
+          :to="tab.path"
+          class="nav-tab"
+          active-class="is-active"
+        >
+          <el-icon><component :is="tab.icon" /></el-icon>
+          <span>{{ tab.label }}</span>
+        </router-link>
+      </nav>
+      <div class="nav-right">
+        <router-link to="/settings" class="settings-btn" active-class="is-active">
+          <el-icon :size="18"><Setting /></el-icon>
+        </router-link>
+      </div>
+    </header>
 
-    <!-- Main Area -->
-    <el-container class="main-container">
-      <!-- Content -->
-      <el-main class="main-content">
-        <router-view />
-      </el-main>
+    <!-- Main Content -->
+    <main class="main-content">
+      <router-view />
+    </main>
 
-      <!-- Status Bar -->
-      <el-footer class="status-bar" height="36px">
-        <div class="status-left">
-          <template v-if="taskStore.currentTask">
-            <span class="task-message">{{ taskStore.currentTask.message }}</span>
-            <el-progress
-              :percentage="taskStore.currentTask.progress"
-              :stroke-width="10"
-              :show-text="false"
-              class="task-progress"
-              :status="taskStore.currentTask.status === 'failed' ? 'exception' : undefined"
-            />
-            <span class="task-percent">{{ taskStore.currentTask.progress }}%</span>
-            <el-button
-              v-if="taskStore.currentTask.status === 'done' || taskStore.currentTask.status === 'failed'"
-              size="small"
-              text
-              @click="taskStore.clearTask()"
-            >
-              <el-icon><Close /></el-icon>
-            </el-button>
-          </template>
-          <span v-else>就绪</span>
-        </div>
-        <div class="status-right">
-          <span>{{ fileStore.files.length }} 个文件已加载</span>
-        </div>
-      </el-footer>
-    </el-container>
-  </el-container>
+    <!-- Status Bar -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <template v-if="taskStore.currentTask">
+          <span class="task-message">{{ taskStore.currentTask.message }}</span>
+          <el-progress
+            :percentage="taskStore.currentTask.progress"
+            :stroke-width="10"
+            :show-text="false"
+            class="task-progress"
+            :status="taskStore.currentTask.status === 'failed' ? 'exception' : undefined"
+          />
+          <span class="task-percent">{{ taskStore.currentTask.progress }}%</span>
+          <el-button
+            v-if="taskStore.currentTask.status === 'done' || taskStore.currentTask.status === 'failed'"
+            size="small"
+            text
+            @click="taskStore.clearTask()"
+          >
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </template>
+        <span v-else>就绪</span>
+      </div>
+      <div class="status-right">
+        <span>{{ fileStore.files.length }} 个文件已加载</span>
+      </div>
+    </footer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { markRaw } from "vue";
 import {
   EditPen,
   Switch,
@@ -79,58 +72,124 @@ import {
 import { useFileStore } from "@/stores/file.store";
 import { useTaskStore } from "@/stores/task.store";
 
-const route = useRoute();
 const fileStore = useFileStore();
 const taskStore = useTaskStore();
 
-const currentRoute = computed(() => route.path);
+const navTabs = [
+  { path: "/rename", label: "批量重命名", icon: markRaw(EditPen) },
+  { path: "/format", label: "格式转换", icon: markRaw(Switch) },
+  { path: "/compress", label: "图片压缩", icon: markRaw(PictureFilled) },
+];
 </script>
 
 <style scoped>
-.app-container {
+.app-layout {
   height: 100vh;
   width: 100vw;
-}
-
-.sidebar {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f5f7fa;
-  border-right: 1px solid #e4e7ed;
-}
-
-.sidebar-header {
-  padding: 20px 16px;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.app-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  text-align: center;
-  letter-spacing: 0.5px;
-}
-
-.sidebar-menu {
-  flex: 1;
-  border-right: none;
-  background-color: transparent;
-}
-
-.main-container {
-  flex: 1;
   overflow: hidden;
 }
 
-.main-content {
-  overflow-y: auto;
-  padding: 20px;
-  background-color: #fff;
+/* ===== Top Navigation Bar ===== */
+.top-nav {
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  gap: 16px;
+  -webkit-app-region: drag; /* Allow window dragging */
 }
 
+.nav-left {
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.app-logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #303133;
+  letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.nav-tabs {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #606266;
+  text-decoration: none;
+  transition: all 0.2s;
+  user-select: none;
+  cursor: pointer;
+}
+
+.nav-tab:hover {
+  background: #f5f7fa;
+  color: #303133;
+}
+
+.nav-tab.is-active {
+  background: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.nav-right {
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #909399;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.settings-btn:hover {
+  background: #f5f7fa;
+  color: #606266;
+}
+
+.settings-btn.is-active {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #fff;
+}
+
+/* ===== Status Bar ===== */
 .status-bar {
+  height: 36px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
