@@ -1,7 +1,18 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from "electron";
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  protocol,
+  net,
+  Tray,
+  Menu,
+  nativeImage,
+} from "electron";
 import { join } from "path";
 import { pathToFileURL } from "url";
-import { existsSync } from "fs";
+import { existsSync, readFile } from "fs";
 import { fileService } from "./services/file.service";
 import { renameService } from "./services/rename.service";
 import type {
@@ -12,6 +23,17 @@ import { imageService } from "./services/image.service";
 import type { CompressOptions } from "./services/image.service";
 
 const isDev = !app.isPackaged;
+
+let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+let isQuitting = false;
+let currentLocale = "zh-CN";
+
+const trayLabels: Record<string, { open: string; quit: string }> = {
+  "zh-CN": { open: "打开主页面", quit: "退出" },
+  ja: { open: "メインウィンドウを開く", quit: "終了" },
+  ko: { open: "메인 페이지 열기", quit: "종료" },
+};
 
 // Register custom protocol for serving local model files
 protocol.registerSchemesAsPrivileged([
@@ -36,7 +58,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     title: "Image Rename AI",
     width: 1200,
     height: 800,
@@ -52,7 +74,14 @@ function createWindow(): void {
   });
 
   mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
+    mainWindow!.show();
+  });
+
+  mainWindow.on("close", (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -65,6 +94,50 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
+}
+
+function showOrCreateWindow(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+  } else {
+    createWindow();
+  }
+}
+
+function buildTrayMenu(): void {
+  if (!tray) return;
+  const labels = trayLabels[currentLocale] || trayLabels["zh-CN"];
+  const contextMenu = Menu.buildFromTemplate([
+    { label: labels.open, click: showOrCreateWindow },
+    { type: "separator" },
+    {
+      label: labels.quit,
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+  tray.setContextMenu(contextMenu);
+}
+
+function createTray(): void {
+  const iconPath =
+    process.platform === "win32"
+      ? join(__dirname, "../../build/icon.ico")
+      : join(__dirname, "../../resources/icon.png");
+
+  const icon = nativeImage.createFromPath(iconPath);
+  if (process.platform === "darwin") {
+    icon.setTemplateImage(true);
+  }
+
+  tray = new Tray(icon);
+  tray.setToolTip("Image Rename AI");
+  buildTrayMenu();
+
+  tray.on("double-click", showOrCreateWindow);
 }
 
 function registerIpcHandlers(): void {
@@ -109,6 +182,22 @@ function registerIpcHandlers(): void {
     return result.filePaths[0];
   });
 
+  // Open directory in OS file explorer
+  ipcMain.handle("shell:openDirectory", async (_event, dirPath: string) => {
+    if (existsSync(dirPath)) {
+      await shell.openPath(dirPath);
+    } else {
+      const lastSep = Math.max(
+        dirPath.lastIndexOf("\\"),
+        dirPath.lastIndexOf("/"),
+      );
+      const parentDir = lastSep > 0 ? dirPath.substring(0, lastSep) : "";
+      if (parentDir && existsSync(parentDir)) {
+        await shell.openPath(parentDir);
+      }
+    }
+  });
+
   // Compression operations
   ipcMain.handle(
     "compress:execute",
@@ -128,6 +217,12 @@ function registerIpcHandlers(): void {
   ipcMain.handle("app:getVersion", () => {
     return app.getVersion();
   });
+
+  // Locale — rebuild tray menu when renderer changes language
+  ipcMain.on("app:setLocale", (_event, locale: string) => {
+    currentLocale = locale;
+    buildTrayMenu();
+  });
 }
 
 app.whenReady().then(() => {
@@ -140,8 +235,10 @@ app.whenReady().then(() => {
     // URL format: local-model://localhost/Xenova/opus-mt-zh-en/resolve/main/config.json
     // We need to strip /resolve/main/ and map to local file
     const url = new URL(request.url);
-    const filePath = decodeURIComponent(url.pathname)
-      .replace(/\/resolve\/main\/?/, "/");
+    const filePath = decodeURIComponent(url.pathname).replace(
+      /\/resolve\/main\/?/,
+      "/",
+    );
     const absolutePath = join(modelsDir, filePath);
 
     if (!existsSync(absolutePath)) {
@@ -157,7 +254,29 @@ app.whenReady().then(() => {
     if (!filePath || !existsSync(filePath)) {
       return new Response("Not Found", { status: 404 });
     }
-    return net.fetch(pathToFileURL(filePath).toString());
+    // Read file into buffer then immediately release handle to avoid locking
+    return new Promise<Response>((resolve) => {
+      readFile(filePath, (err, data) => {
+        if (err) {
+          resolve(new Response("Read Error", { status: 500 }));
+          return;
+        }
+        const ext = filePath.split(".").pop()?.toLowerCase() || "";
+        const mimeMap: Record<string, string> = {
+          png: "image/png",
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          webp: "image/webp",
+          gif: "image/gif",
+          heic: "image/heic",
+        };
+        resolve(
+          new Response(data, {
+            headers: { "Content-Type": mimeMap[ext] || "application/octet-stream" },
+          }),
+        );
+      });
+    });
   });
 
   app.on("browser-window-created", (_, window) => {
@@ -177,14 +296,22 @@ app.whenReady().then(() => {
 
   registerIpcHandlers();
   createWindow();
+  createTray();
 
   app.on("activate", function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    } else {
+      createWindow();
+    }
   });
 });
 
+app.on("before-quit", () => {
+  isQuitting = true;
+});
+
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  // Do not quit — the app lives in the system tray
 });

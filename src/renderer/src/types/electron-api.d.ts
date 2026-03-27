@@ -39,7 +39,10 @@ export interface TaskProgress {
   id: string;
   completed: number;
   total: number;
-  fileId: string;
+  fileId?: string;
+  filePath?: string;
+  originalSize?: number;
+  compressedSize?: number;
   status: string;
   error?: string;
 }
@@ -64,6 +67,9 @@ export interface ElectronAPI {
   // Directory selection
   selectDirectory: () => Promise<string | null>;
 
+  // Open directory in OS file explorer
+  openDirectory: (dirPath: string) => Promise<void>;
+
   // Compression operations
   compressImages: (
     files: string[],
@@ -83,6 +89,9 @@ export interface ElectronAPI {
 
   // App info
   getAppVersion: () => Promise<string>;
+
+  // Locale
+  setLocale: (locale: string) => void;
 }
 
 declare global {

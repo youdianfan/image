@@ -34,7 +34,7 @@ npm run download:model:mirror  # 通过 hf-mirror.com 下载（国内镜像）
 ### 渲染进程结构
 
 - **视图**：`WorkspaceView`（主重命名/压缩界面）、`SettingsView`（AI 模型下载 + 命名格式配置）
-- **Store**（Pinia，`src/renderer/src/stores/`）：`file.store`、`rename.store`、`compress.store`、`task.store`、`ai.store`、`workspace.store`
+- **Store**（Pinia，`src/renderer/src/stores/`）：`file.store`、`rename.store`、`compress.store`、`task.store`、`ai.store`、`workspace.store`、`theme.store`、`update.store`
 - **Composables**（`src/renderer/src/composables/`）：`useFileImport`、`useWorkspace` —— 从视图中抽取的编排逻辑
 - **Services**：`aiTranslator` —— 在渲染进程中运行 Xenova/opus-mt-zh-en 模型（@huggingface/transformers，ONNX 格式），初始下载后完全离线
 - **Utils**：`template-engine`（基于规则的文件名生成）、`nameConverter`（6 种命名格式）、`filename-sanitizer`、`conflict-detector`
@@ -81,10 +81,62 @@ AI 翻译模型（Helsinki-NLP/opus-mt-zh-en，约 150MB 量化 ONNX）本地打
 
 两阶段：`useWorkspace` 中的内存检测（预览时，不区分大小写），然后是 `RenameService` 中的磁盘检测（执行时）。策略：`autoNumber`（追加 `-1`、`-2`）、`skip`（跳过）、`overwrite`（覆盖）。
 
+### 主题系统
+
+应用支持浅色/深色/跟随系统三种主题模式，以及自定义主色。
+
+**架构**：`theme.store`（Pinia）管理 `mode`（`light` | `dark` | `system`）和 `primaryColor`（hex），持久化到 `localStorage`。在 `main.ts` 中通过 `themeStore.init()` 初始化，确保首屏即应用正确主题。
+
+**CSS 变量体系**（`src/renderer/src/styles/global.css`）：
+
+- 布局变量：`--nav-height`、`--statusbar-height`
+- 背景：`--app-bg`、`--app-bg-secondary`、`--app-bg-tertiary`
+- 文字：`--app-text-primary`、`--app-text-regular`、`--app-text-secondary`、`--app-text-placeholder`
+- 边框：`--app-border`、`--app-border-light`、`--app-border-dashed`
+- 语义色：`--app-primary`、`--app-primary-light`、`--app-success`、`--app-warning`、`--app-danger`
+- 滚动条：`--app-scrollbar`、`--app-scrollbar-hover`
+
+**暗色模式**：通过在 `<html>` 上切换 `dark` class 激活。Element Plus 暗色变量由 `element-plus/theme-chalk/dark/css-vars.css` 提供，应用自定义变量在 `html.dark` 选择器下覆盖。
+
+**自定义主色**：`theme.store` 将用户选择的 hex 色值转换为 HSL，生成 `--el-color-primary-light-1` 至 `light-9` 和 `dark-2` 共 11 个 Element Plus 主色梯度变量，通过 `document.documentElement.style.setProperty()` 动态注入。
+
+**开发规则**：
+- **禁止在组件中硬编码颜色值**，必须使用 `var(--app-*)` CSS 变量或 Element Plus 内置 CSS 变量
+- 新增 CSS 变量时需同时在 `:root`（浅色）和 `html.dark`（深色）中定义
+- 外观设置 UI 位于 `SettingsView.vue` 的"外观"卡片中
+
+### 系统托盘
+
+应用支持最小化到系统托盘（Windows 任务栏 / macOS 菜单栏）。关闭窗口时隐藏而非退出，右键托盘图标提供"打开主页面"和"退出"菜单。实现在 `src/main/index.ts` 中，使用模块级 `mainWindow`、`tray`、`isQuitting` 变量管理生命周期。托盘菜单随语言切换自动更新。
+
+### 国际化（i18n）
+
+应用使用 `vue-i18n` 实现多语言支持，当前支持：简体中文（`zh-CN`，默认）、日语（`ja`）、韩语（`ko`）。
+
+**架构**：
+
+- **Locale 文件**（`src/renderer/src/locales/`）：每种语言一个 TypeScript 文件（`zh-CN.ts`、`ja.ts`、`ko.ts`），导出嵌套对象结构的翻译文本
+- **i18n 配置**（`src/renderer/src/i18n.ts`）：创建 `vue-i18n` 实例，non-legacy 模式，fallback 到 `zh-CN`
+- **语言持久化**：通过 `localStorage`（`app-locale` key）保存用户选择
+- **主进程同步**：渲染进程切换语言时通过 `window.api.setLocale()` → `ipcMain.on("app:setLocale")` 通知主进程重建托盘菜单
+
+**开发规则**：
+- **禁止在 Vue 模板和 JS 中硬编码用户可见的文本字符串**，必须使用 `$t('key')` 或 `t('key')` 调用
+- Vue 模板中使用 `$t('key')`，`<script setup>` / composables 中使用 `const { t } = useI18n()` 后调用 `t('key')`
+- 新增用户可见文本时，需同时在 **所有 locale 文件** 中添加对应翻译
+- locale 文件的 key 结构按功能模块组织：`app`、`nav`、`workspace`、`import`、`fileList`、`settings`、`panel`、`task`、`format`、`tray`
+- 主进程中的少量文本（托盘菜单）通过 `trayLabels` 对象按 locale 查找，不使用 vue-i18n
+- 新增语言时需要：① 创建 `src/renderer/src/locales/<code>.ts` ② 在 `i18n.ts` 的 `messages` 和 `LOCALE_OPTIONS` 中注册 ③ 在 `src/main/index.ts` 的 `trayLabels` 中添加对应翻译
+
+### 版本更新
+
+`update.store`（Pinia）管理版本检测与下载安装流程。当前为 **模拟实现**（mock），状态机：`idle` → `checking` → `available`/`up-to-date` → `downloading` → `ready` → 安装。UI 位于 `SettingsView.vue` 的"版本更新"卡片中。后续接入真实 API 时替换 store 中的 mock 逻辑即可，无需修改 UI。
+
 ## 技术栈
 
 - **桌面端**：Electron 41、electron-vite、electron-builder
 - **前端**：Vue 3.5、Pinia 3、Vue Router 5、Element Plus、TypeScript 5.9
+- **国际化**：vue-i18n 11（Composition API 模式）
 - **图片处理**：Sharp（主进程，通过 IPC 调用）
 - **AI**：@huggingface/transformers（ONNX 格式，在渲染进程运行），支持 HuggingFace 国内镜像配置
 - **自动导入**：`unplugin-auto-import` + `unplugin-vue-components`（Vue API 和 Element Plus 组件自动导入，无需手动 import）

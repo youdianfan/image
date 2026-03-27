@@ -3,15 +3,9 @@
     <!-- Top Navigation Bar -->
     <header class="top-nav">
       <nav class="nav-left">
-        <router-link
-          v-for="tab in navTabs"
-          :key="tab.path"
-          :to="tab.path"
-          class="nav-tab"
-          active-class="is-active"
-        >
-          <el-icon><component :is="tab.icon" /></el-icon>
-          <span>{{ tab.label }}</span>
+        <router-link to="/workspace" class="nav-tab" active-class="is-active">
+          <el-icon><FolderOpened /></el-icon>
+          <span>{{ $t("nav.workspace") }}</span>
         </router-link>
       </nav>
       <div class="nav-spacer"></div>
@@ -31,69 +25,39 @@
       <router-view />
     </main>
 
-    <!-- Status Bar -->
-    <footer class="status-bar">
+    <!-- Status Bar (hidden when workspace has files — action bar takes over) -->
+    <footer v-if="!isWorkspaceWithFiles" class="status-bar">
       <div class="status-left">
-        <template v-if="taskStore.currentTask">
-          <span class="task-message">{{ taskStore.currentTask.message }}</span>
-          <el-progress
-            :percentage="taskStore.currentTask.progress"
-            :stroke-width="10"
-            :show-text="false"
-            class="task-progress"
-            :status="
-              taskStore.currentTask.status === 'failed'
-                ? 'exception'
-                : undefined
-            "
-          />
-          <span class="task-percent"
-            >{{ taskStore.currentTask.progress }}%</span
-          >
-          <el-button
-            v-if="
-              taskStore.currentTask.status === 'done' ||
-              taskStore.currentTask.status === 'failed'
-            "
-            size="small"
-            text
-            @click="taskStore.clearTask()"
-          >
-            <el-icon><Close /></el-icon>
-          </el-button>
-        </template>
-        <span v-else>就绪</span>
+        <span>{{ $t("app.ready") }}</span>
       </div>
       <div class="status-right">
-        <span>{{ fileStore.files.length }} 个文件已加载</span>
+        <span>{{
+          $t("app.filesLoaded", { count: fileStore.files.length })
+        }}</span>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { markRaw, onMounted } from "vue";
-import {
-  FolderOpened,
-  Setting,
-  Close,
-} from "@element-plus/icons-vue";
+import { onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
+import { FolderOpened, Setting } from "@element-plus/icons-vue";
 import { useFileStore } from "@/stores/file.store";
-import { useTaskStore } from "@/stores/task.store";
 import { useAiStore } from "@/stores/ai.store";
 
+const route = useRoute();
 const fileStore = useFileStore();
-const taskStore = useTaskStore();
 const aiStore = useAiStore();
+
+const isWorkspaceWithFiles = computed(
+  () => route.path === "/workspace" && fileStore.files.length > 0,
+);
 
 // Auto-load AI model on app start
 onMounted(() => {
   aiStore.loadModel();
 });
-
-const navTabs = [
-  { path: "/workspace", label: "工作台", icon: markRaw(FolderOpened) },
-];
 </script>
 
 <style scoped>
@@ -112,10 +76,10 @@ const navTabs = [
   display: flex;
   align-items: center;
   padding: 0 20px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--app-border);
   gap: 16px;
-  -webkit-app-region: drag; /* Allow window dragging */
+  -webkit-app-region: drag;
 }
 
 .nav-left {
@@ -133,26 +97,34 @@ const navTabs = [
 .nav-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 18px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #606266;
+  gap: 8px;
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--app-text-regular);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   cursor: pointer;
 }
 
+.nav-tab :deep(.el-icon) {
+  font-size: 18px;
+}
+
 .nav-tab:hover {
-  background: #f5f7fa;
-  color: #303133;
+  background: var(--app-bg-secondary);
+  color: var(--app-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
 }
 
 .nav-tab.is-active {
-  background: #ecf5ff;
-  color: #409eff;
-  font-weight: 500;
+  background: var(--app-primary-light);
+  color: var(--app-primary);
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.15);
 }
 
 .nav-right {
@@ -164,23 +136,24 @@ const navTabs = [
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  color: #909399;
+  color: var(--app-text-secondary);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
 .settings-btn:hover {
-  background: #f5f7fa;
-  color: #606266;
+  background: var(--app-bg-secondary);
+  color: var(--app-primary);
+  transform: rotate(60deg);
 }
 
 .settings-btn.is-active {
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--app-primary-light);
+  color: var(--app-primary);
 }
 
 /* ===== Main Content ===== */
@@ -188,7 +161,7 @@ const navTabs = [
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background: #fff;
+  background: var(--app-bg);
 }
 
 /* ===== Status Bar ===== */
@@ -199,10 +172,10 @@ const navTabs = [
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  background-color: #f5f7fa;
-  border-top: 1px solid #e4e7ed;
+  background-color: var(--app-bg-secondary);
+  border-top: 1px solid var(--app-border);
   font-size: 12px;
-  color: #909399;
+  color: var(--app-text-secondary);
 }
 
 .status-left,
@@ -210,18 +183,5 @@ const navTabs = [
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.task-message {
-  white-space: nowrap;
-}
-
-.task-progress {
-  width: 120px;
-}
-
-.task-percent {
-  font-size: 11px;
-  min-width: 32px;
 }
 </style>

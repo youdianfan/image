@@ -11,7 +11,6 @@ export interface RenameConfig {
   startIndex: number;
   indexStep: number;
   indexDigits: number;
-  conflictStrategy: ConflictStrategy;
 }
 
 export interface CompressConfig {
@@ -46,13 +45,12 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   const saved = loadSavedSettings();
 
   const rename = ref<RenameConfig>({
-    enabled: true,
+    enabled: false,
     template: "{original}",
     nameFormat: saved.nameFormat || "snake_case",
     startIndex: 1,
     indexStep: 1,
     indexDigits: 3,
-    conflictStrategy: "autoNumber",
   });
 
   const compress = ref<CompressConfig>({

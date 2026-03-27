@@ -12,6 +12,8 @@ export default {
     clear: "초기화",
     fileCount: "파일 {count}개",
     execute: "실행",
+    cancel: "실행 취소",
+    openOutputDir: "출력 폴더 열기",
     dropToAdd: "파일을 놓아 추가",
   },
   import: {
@@ -36,6 +38,12 @@ export default {
     statusProcessing: "처리 중",
     statusDone: "완료",
     statusError: "오류",
+    originalSize: "원본 크기",
+    compressedSize: "압축 후 크기",
+    actions: "작업",
+    delete: "삭제",
+    compress: "압축",
+    compressing: "압축 중",
   },
   settings: {
     title: "설정",
@@ -54,6 +62,12 @@ export default {
       description:
         "번역 모델이 내장되어 있어 다운로드가 필요 없습니다. 로컬에서 실행되며 오프라인으로 사용 가능합니다.",
     },
+    autoTranslate: {
+      title: "자동 번역",
+      toggle: "가져올 때 자동 번역",
+      description:
+        "활성화하면 중국어 이름의 이미지를 가져올 때 자동으로 영어 파일명으로 번역됩니다. 비활성화하면 원래 중국어 이름이 유지됩니다.",
+    },
     naming: {
       title: "명명 규칙",
       format: "포맷",
@@ -61,6 +75,13 @@ export default {
       exampleBefore: "白色的猫.jpg",
       description:
         "중국어 이미지를 가져올 때 AI 번역 후 이 포맷으로 영어 파일명이 생성됩니다.",
+    },
+    conflict: {
+      title: "충돌 처리 전략",
+      autoNumber: "자동 번호",
+      skip: "건너뛰기",
+      overwrite: "덮어쓰기",
+      description: "이름 변경 후 파일명이 충돌할 때 처리 방법.",
     },
     appearance: {
       title: "외관",
@@ -137,6 +158,9 @@ export default {
     completeWithIssues: "처리 완료, {issues}",
     complete: "처리 완료",
     failed: "처리 실패",
+    cancelled: "취소됨",
+    cancelledMessage:
+      "작업이 취소되었습니다. 일부 파일은 이미 처리되었을 수 있습니다",
     errorOccurred: "처리 중 오류가 발생했습니다",
   },
   format: {

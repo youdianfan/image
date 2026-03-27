@@ -108,8 +108,11 @@ export class ImageService {
     const outputDir = options.outputDirectory || path.dirname(filePath);
     const outputPath = path.join(outputDir, outputFileName);
 
-    // Build Sharp pipeline
-    let pipeline = sharp(filePath);
+    // Read file into buffer first to avoid Sharp holding file handles on Windows
+    const inputBuffer = await fs.readFile(filePath);
+
+    // Build Sharp pipeline from buffer (no file handle held)
+    let pipeline = sharp(inputBuffer);
 
     // Apply EXIF rotation then strip metadata
     if (options.stripExif) {
@@ -118,7 +121,12 @@ export class ImageService {
 
     // Resize if scale is not 100%
     if (options.scale !== 100) {
-      const metadata = await sharp(filePath).metadata();
+      const metadata = await pipeline.metadata();
+      // Re-create pipeline since metadata() consumes it
+      pipeline = sharp(inputBuffer);
+      if (options.stripExif) {
+        pipeline = pipeline.rotate();
+      }
       if (metadata.width) {
         const newWidth = Math.round(metadata.width * (options.scale / 100));
         pipeline = pipeline.resize(newWidth);
@@ -161,7 +169,8 @@ export class ImageService {
   async getImageMetadata(
     filePath: string,
   ): Promise<{ width: number; height: number; format: string }> {
-    const metadata = await sharp(filePath).metadata();
+    const inputBuffer = await fs.readFile(filePath);
+    const metadata = await sharp(inputBuffer).metadata();
     return {
       width: metadata.width || 0,
       height: metadata.height || 0,

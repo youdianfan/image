@@ -12,6 +12,8 @@ export default {
     clear: "清空",
     fileCount: "{count} 个文件",
     execute: "执行",
+    cancel: "取消执行",
+    openOutputDir: "打开输出目录",
     dropToAdd: "释放以添加文件",
   },
   import: {
@@ -36,6 +38,12 @@ export default {
     statusProcessing: "处理中",
     statusDone: "完成",
     statusError: "错误",
+    originalSize: "原始大小",
+    compressedSize: "压缩后大小",
+    actions: "操作",
+    delete: "删除",
+    compress: "压缩",
+    compressing: "压缩中",
   },
   settings: {
     title: "设置",
@@ -53,12 +61,25 @@ export default {
       description:
         "翻译模型已内置，无需联网下载。模型运行在本地，无需联网即可使用。",
     },
+    autoTranslate: {
+      title: "自动翻译",
+      toggle: "导入时自动翻译",
+      description:
+        "开启后，导入含中文名称的图片时将自动翻译为英文文件名。关闭后将保留原始中文名称。",
+    },
     naming: {
       title: "命名规则",
       format: "格式",
       example: "示例：",
       exampleBefore: "白色的猫.jpg",
       description: "中文图片导入时，AI 翻译后将按此格式生成英文文件名。",
+    },
+    conflict: {
+      title: "冲突处理策略",
+      autoNumber: "自动编号",
+      skip: "跳过",
+      overwrite: "覆盖",
+      description: "当重命名后的文件名产生冲突时的处理方式。",
     },
     appearance: {
       title: "外观",
@@ -134,6 +155,8 @@ export default {
     completeWithIssues: "处理完成，{issues}",
     complete: "处理完成",
     failed: "处理失败",
+    cancelled: "已取消",
+    cancelledMessage: "任务已取消，部分文件可能已处理",
     errorOccurred: "处理过程中发生错误",
   },
   format: {

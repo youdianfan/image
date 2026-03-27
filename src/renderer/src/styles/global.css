@@ -1,8 +1,66 @@
+/* ===== Layout Constants ===== */
 :root {
   --nav-height: 52px;
   --statusbar-height: 36px;
 }
 
+/* ===== Light Theme (default) ===== */
+:root {
+  --app-bg: #ffffff;
+  --app-bg-secondary: #f5f7fa;
+  --app-bg-tertiary: #fafafa;
+
+  --app-text-primary: #303133;
+  --app-text-regular: #606266;
+  --app-text-secondary: #909399;
+  --app-text-placeholder: #c0c4cc;
+
+  --app-border: #e4e7ed;
+  --app-border-light: #ebeef5;
+  --app-border-dashed: #dcdfe6;
+
+  --app-primary: #409eff;
+  --app-primary-light: #ecf5ff;
+
+  --app-success: #67c23a;
+  --app-warning: #e6a23c;
+  --app-danger: #f56c6c;
+
+  --app-scrollbar: #c0c4cc;
+  --app-scrollbar-hover: #909399;
+
+  color-scheme: light;
+}
+
+/* ===== Dark Theme ===== */
+html.dark {
+  --app-bg: #1d1e1f;
+  --app-bg-secondary: #141414;
+  --app-bg-tertiary: #262727;
+
+  --app-text-primary: #e5eaf3;
+  --app-text-regular: #cfd3dc;
+  --app-text-secondary: #a3a6ad;
+  --app-text-placeholder: #6c6e72;
+
+  --app-border: #4c4d4f;
+  --app-border-light: #414243;
+  --app-border-dashed: #4c4d4f;
+
+  --app-primary: #409eff;
+  --app-primary-light: #18222c;
+
+  --app-success: #67c23a;
+  --app-warning: #e6a23c;
+  --app-danger: #f56c6c;
+
+  --app-scrollbar: #4c4d4f;
+  --app-scrollbar-hover: #636466;
+
+  color-scheme: dark;
+}
+
+/* ===== Reset ===== */
 * {
   margin: 0;
   padding: 0;
@@ -18,23 +76,30 @@ body,
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     sans-serif;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
 }
 
-/* Scrollbar styling */
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
+  background: var(--app-scrollbar);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #909399;
+  background: var(--app-scrollbar-hover);
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Button icon-text spacing */
+.el-button .el-icon {
+  margin-right: 6px;
 }

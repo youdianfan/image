@@ -1,7 +1,9 @@
-import { computed } from "vue";
-import { ElMessageBox, ElMessage } from "element-plus";
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessageBox } from "element-plus";
 import { useFileStore } from "@/stores/file.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useSettingsStore } from "@/stores/settings.store";
 import { useTaskStore } from "@/stores/task.store";
 import { applyTemplate, buildContext } from "@/utils/template-engine";
 import {
@@ -19,9 +21,14 @@ export interface WorkspacePreviewItem extends FileListItem {
 }
 
 export function useWorkspace() {
+  const { t } = useI18n();
   const fileStore = useFileStore();
   const wsStore = useWorkspaceStore();
+  const settingsStore = useSettingsStore();
   const taskStore = useTaskStore();
+
+  // Map compress target paths to file IDs for progress tracking
+  const compressPathToIdMap = ref(new Map<string, string>());
 
   // Adapt workspace rename config to the format expected by template engine
   function getRenameRule() {
@@ -33,7 +40,7 @@ export function useWorkspace() {
       startIndex: r.startIndex,
       indexStep: r.indexStep,
       indexDigits: r.indexDigits,
-      conflictStrategy: r.conflictStrategy,
+      conflictStrategy: settingsStore.conflictStrategy,
       outputMode: wsStore.output.mode,
       outputDirectory: wsStore.output.directory,
       preserveStructure: false,
@@ -59,23 +66,35 @@ export function useWorkspace() {
         const wasTranslated = isChinese && file.translatedName !== file.name;
 
         if (wsStore.rename.enabled && wasTranslated) {
-          // Chinese file with translation: apply template to translated name
-          const context = buildContext(file.name, file.extension, index, rule, file.translatedName);
+          // Rename enabled + translated: apply template to translated name
+          const context = buildContext(
+            file.name,
+            file.extension,
+            index,
+            rule,
+            file.translatedName,
+          );
           newName = applyTemplate(rule.template, context, rule);
           newName = sanitizeFilename(newName);
           newName = truncateFilename(newName);
-        } else if (isChinese && !wasTranslated) {
-          // Chinese file not yet translated: show original (translation pending)
-          newName = file.name;
+        } else if (wasTranslated) {
+          // Translated but rename not enabled: use translated name directly
+          newName = file.translatedName;
         } else {
-          // English file: keep original name
+          // Not translated (English file or translation pending): keep original
           newName = file.name;
         }
       }
 
       // Apply output format extension when compress with format conversion is enabled
-      if (wsStore.compress.enabled && wsStore.compress.outputFormat !== "original") {
-        newName = newName.replace(/\.[^.]+$/, `.${wsStore.compress.outputFormat}`);
+      if (
+        wsStore.compress.enabled &&
+        wsStore.compress.outputFormat !== "original"
+      ) {
+        newName = newName.replace(
+          /\.[^.]+$/,
+          `.${wsStore.compress.outputFormat}`,
+        );
       }
 
       // Target directory
@@ -101,9 +120,13 @@ export function useWorkspace() {
         id: file.id,
         originalName: file.name,
         originalPath: file.path,
-        imageUrl: "local-image://localhost?path=" + encodeURIComponent(file.path),
+        imageUrl:
+          "local-image://localhost?path=" + encodeURIComponent(file.path),
         newName,
         sizeText: formatFileSize(file.size),
+        compressedSizeText: file.compressedSize
+          ? formatFileSize(file.compressedSize)
+          : "--",
         status: file.status,
         hasConflict: false,
         sourcePath: file.path,
@@ -120,7 +143,7 @@ export function useWorkspace() {
       }));
       const resolved = detectAndResolveConflicts(
         conflictInput,
-        wsStore.rename.conflictStrategy,
+        settingsStore.conflictStrategy,
       );
       return rawItems.map((item, index) => ({
         ...item,
@@ -148,12 +171,12 @@ export function useWorkspace() {
     if (wsStore.output.mode === "overwrite") {
       try {
         await ElMessageBox.confirm(
-          "将直接覆盖原文件，此操作不可撤销。确定要继续吗？",
-          "确认覆盖",
+          t("task.confirmOverwrite"),
+          t("task.confirmOverwriteTitle"),
           {
             type: "warning",
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
+            confirmButtonText: t("task.confirm"),
+            cancelButtonText: t("task.cancel"),
           },
         );
       } catch {
@@ -165,7 +188,7 @@ export function useWorkspace() {
       wsStore.output.mode === "customDirectory" &&
       !wsStore.output.directory
     ) {
-      ElMessage.warning("请先选择输出目录");
+      ElMessage.warning(t("task.selectOutputDir"));
       return;
     }
 
@@ -183,7 +206,7 @@ export function useWorkspace() {
       progress: 0,
       total: totalSteps,
       completed: 0,
-      message: "处理中...",
+      message: t("task.processing"),
     });
 
     let completedSteps = 0;
@@ -200,7 +223,9 @@ export function useWorkspace() {
           target: `${item.targetDir}\\${item.newName}`,
           id: item.id,
         }));
-        taskStore.updateProgress({ message: copyOnly ? "正在复制..." : "正在重命名..." });
+        taskStore.updateProgress({
+          message: copyOnly ? t("task.copying") : t("task.renaming"),
+        });
         const renameResult = await window.api.executeRename(
           plan,
           undefined,
@@ -218,6 +243,12 @@ export function useWorkspace() {
         }
       }
 
+      // Check for cancellation between steps
+      if (taskStore.isCancelling) {
+        taskStore.completeTask(t("task.cancelledMessage"));
+        return;
+      }
+
       // Step 2: Compress
       if (wsStore.compress.enabled) {
         // Determine which files to compress (renamed targets or originals)
@@ -225,6 +256,12 @@ export function useWorkspace() {
           wsStore.rename.enabled || copyOnly
             ? items.map((item) => `${item.targetDir}\\${item.newName}`)
             : items.map((item) => item.sourcePath);
+
+        // Build path-to-id map for compress progress tracking
+        compressPathToIdMap.value.clear();
+        for (let i = 0; i < filesToCompress.length; i++) {
+          compressPathToIdMap.value.set(filesToCompress[i], items[i].id);
+        }
 
         const compressOptions = {
           quality: wsStore.compress.quality,
@@ -238,7 +275,7 @@ export function useWorkspace() {
               : "",
         };
 
-        taskStore.updateProgress({ message: "正在压缩..." });
+        taskStore.updateProgress({ message: t("task.compressing") });
         const compressResult = await window.api.compressImages(
           filesToCompress,
           compressOptions,
@@ -252,34 +289,73 @@ export function useWorkspace() {
         compressFailed = compressResult.failed;
       }
 
-      taskStore.completeTask();
-
       // Update file paths so re-execution uses correct source locations
       // Only when files were moved (overwrite mode), not copied (newDirectory mode)
       if (wsStore.output.mode === "overwrite") {
         for (const item of items) {
           if (!failedSources.has(item.sourcePath)) {
-            fileStore.updateFilePath(item.id, `${item.targetDir}\\${item.newName}`);
+            fileStore.updateFilePath(
+              item.id,
+              `${item.targetDir}\\${item.newName}`,
+            );
           }
         }
       }
 
-      // Consolidated toast
+      // Show result in bottom status bar
       const totalFailed = renameFailed + compressFailed;
       if (totalFailed > 0) {
         const parts: string[] = [];
-        if (renameFailed > 0) parts.push(`重命名 ${renameFailed} 失败`);
-        if (compressFailed > 0) parts.push(`压缩 ${compressFailed} 失败`);
-        ElMessage.warning(`处理完成，${parts.join("，")}`);
+        if (renameFailed > 0)
+          parts.push(t("task.renameFailed", { count: renameFailed }));
+        if (compressFailed > 0)
+          parts.push(t("task.compressFailed", { count: compressFailed }));
+        taskStore.completeTask(
+          t("task.completeWithIssues", { issues: parts.join("，") }),
+        );
       } else {
-        ElMessage.success("处理完成");
+        taskStore.completeTask(t("task.complete"));
       }
     } catch {
-      taskStore.failTask("处理失败");
-      ElMessage.error("处理过程中发生错误");
+      taskStore.failTask(t("task.failed"));
     } finally {
-      taskStore.clearTask();
+      // Auto-clear status after a delay so the user can read the result
+      setTimeout(() => taskStore.clearTask(), 3000);
     }
+  }
+
+  function cancelExecution(): void {
+    taskStore.cancelTask();
+  }
+
+  const canOpenOutputDir = computed(() => {
+    if (wsStore.output.mode === "customDirectory") {
+      return !!wsStore.output.directory;
+    }
+    return fileStore.files.length > 0;
+  });
+
+  async function openOutputDirectory(): Promise<void> {
+    let dirPath: string;
+
+    if (wsStore.output.mode === "customDirectory" && wsStore.output.directory) {
+      dirPath = wsStore.output.directory;
+    } else if (fileStore.files.length > 0) {
+      const firstFile = fileStore.files[0];
+      const lastSep =
+        firstFile.path.lastIndexOf("\\") !== -1
+          ? firstFile.path.lastIndexOf("\\")
+          : firstFile.path.lastIndexOf("/");
+      const sourceDir = firstFile.path.substring(0, lastSep);
+      dirPath =
+        wsStore.output.mode === "autoDirectory"
+          ? sourceDir + "\\output"
+          : sourceDir;
+    } else {
+      return;
+    }
+
+    await window.api.openDirectory(dirPath);
   }
 
   function setupProgressListener(): void {
@@ -290,6 +366,8 @@ export function useWorkspace() {
           completed: number;
           total: number;
           fileId?: string;
+          filePath?: string;
+          compressedSize?: number;
           status?: string;
           error?: string;
         },
@@ -301,6 +379,18 @@ export function useWorkspace() {
             progress.error,
           );
         }
+
+        // Capture per-file compressed size from compress progress events
+        if (
+          progress.filePath &&
+          progress.compressedSize &&
+          progress.status === "done"
+        ) {
+          const fileId = compressPathToIdMap.value.get(progress.filePath);
+          if (fileId) {
+            fileStore.updateCompressedSize(fileId, progress.compressedSize);
+          }
+        }
       },
     );
   }
@@ -309,11 +399,51 @@ export function useWorkspace() {
     window.api.removeTaskProgressListener();
   }
 
+  async function compressSingleFile(fileId: string): Promise<void> {
+    const file = fileStore.files.find((f) => f.id === fileId);
+    if (!file || taskStore.isRunning) return;
+
+    const compressOptions = {
+      quality: wsStore.compress.quality,
+      scale: wsStore.compress.scale,
+      stripExif: wsStore.compress.stripExif,
+      outputFormat: wsStore.compress.outputFormat,
+      outputDirectory: "",
+    };
+
+    // Use original file path for individual compression
+    const filePath = file.path;
+
+    // Set up path map for progress tracking
+    compressPathToIdMap.value.set(filePath, fileId);
+
+    fileStore.updateFileStatus(fileId, "processing");
+
+    try {
+      const result = await window.api.compressImages([filePath], compressOptions);
+      if (result.failed > 0) {
+        fileStore.updateFileStatus(fileId, "error", result.errors[0]?.error);
+      } else {
+        fileStore.updateFileStatus(fileId, "done");
+        // Fallback: set compressed size from result if progress listener didn't capture it
+        if (result.totalCompressedSize > 0 && !file.compressedSize) {
+          fileStore.updateCompressedSize(fileId, result.totalCompressedSize);
+        }
+      }
+    } catch (err) {
+      fileStore.updateFileStatus(fileId, "error", String(err));
+    }
+  }
+
   return {
     previewItems,
     canExecute,
+    canOpenOutputDir,
     execute,
+    cancelExecution,
+    openOutputDirectory,
     setupProgressListener,
     cleanupProgressListener,
+    compressSingleFile,
   };
 }

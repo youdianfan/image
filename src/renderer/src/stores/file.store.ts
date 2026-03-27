@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { aiTranslator } from "@/services/aiTranslator";
 import { containsChinese, convertName } from "@/utils/nameConverter";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useSettingsStore } from "@/stores/settings.store";
 
 export interface ImageFile {
   id: string;
@@ -15,6 +16,7 @@ export interface ImageFile {
   status: "pending" | "processing" | "done" | "error";
   error?: string;
   hasManualOverride: boolean;
+  compressedSize?: number;
 }
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "heic"]);
@@ -46,6 +48,8 @@ export const useFileStore = defineStore("file", () => {
    * Non-blocking: updates translatedName in-place when translation completes.
    */
   async function autoTranslateFiles(newFiles: ImageFile[]): Promise<void> {
+    const settingsStore = useSettingsStore();
+    if (!settingsStore.autoTranslate) return;
     if (!aiTranslator.isReady()) return;
 
     for (const file of newFiles) {
@@ -167,10 +171,18 @@ export const useFileStore = defineStore("file", () => {
     }
   }
 
+  function updateCompressedSize(id: string, compressedSize: number): void {
+    const file = files.value.find((f) => f.id === id);
+    if (file) {
+      file.compressedSize = compressedSize;
+    }
+  }
+
   function resetAllStatus(): void {
     files.value.forEach((f) => {
       f.status = "pending";
       f.error = undefined;
+      f.compressedSize = undefined;
     });
   }
 
@@ -193,6 +205,7 @@ export const useFileStore = defineStore("file", () => {
     updateFileName,
     setManualOverride,
     updateFileStatus,
+    updateCompressedSize,
     resetAllStatus,
     updateFilePath,
   };

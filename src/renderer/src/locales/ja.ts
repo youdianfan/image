@@ -12,6 +12,8 @@ export default {
     clear: "クリア",
     fileCount: "{count} ファイル",
     execute: "実行",
+    cancel: "キャンセル",
+    openOutputDir: "出力先を開く",
     dropToAdd: "ファイルをドロップして追加",
   },
   import: {
@@ -36,6 +38,12 @@ export default {
     statusProcessing: "処理中",
     statusDone: "完了",
     statusError: "エラー",
+    originalSize: "元のサイズ",
+    compressedSize: "圧縮後サイズ",
+    actions: "操作",
+    delete: "削除",
+    compress: "圧縮",
+    compressing: "圧縮中",
   },
   settings: {
     title: "設定",
@@ -54,6 +62,12 @@ export default {
       description:
         "翻訳モデルは内蔵されており、ダウンロード不要です。ローカルで実行され、オフラインで使用できます。",
     },
+    autoTranslate: {
+      title: "自動翻訳",
+      toggle: "インポート時に自動翻訳",
+      description:
+        "有効にすると、中国語名の画像をインポートする際に自動的に英語ファイル名に翻訳されます。無効にすると元の中国語名が保持されます。",
+    },
     naming: {
       title: "命名規則",
       format: "フォーマット",
@@ -61,6 +75,13 @@ export default {
       exampleBefore: "白色的猫.jpg",
       description:
         "中国語の画像をインポートすると、AI 翻訳後にこのフォーマットで英語ファイル名が生成されます。",
+    },
+    conflict: {
+      title: "競合処理戦略",
+      autoNumber: "自動番号付け",
+      skip: "スキップ",
+      overwrite: "上書き",
+      description: "リネーム後にファイル名が競合した場合の処理方法。",
     },
     appearance: {
       title: "外観",
@@ -137,6 +158,9 @@ export default {
     completeWithIssues: "処理完了、{issues}",
     complete: "処理完了",
     failed: "処理失敗",
+    cancelled: "キャンセル済み",
+    cancelledMessage:
+      "タスクがキャンセルされました。一部のファイルは処理済みの可能性があります",
     errorOccurred: "処理中にエラーが発生しました",
   },
   format: {

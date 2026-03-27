@@ -129,3 +129,73 @@
 3. `useWorkspace.ts` 中 `targetDir` 计算逻辑适配新模式：autoDirectory 模式下输出到 `sourceDir\output`；`canExecute`、`execute()` 中的相关判断同步更新。
 
 **涉及文件**：`src/renderer/src/stores/workspace.store.ts`、`src/renderer/src/components/SettingsPanel.vue`、`src/renderer/src/composables/useWorkspace.ts`
+
+---
+
+## #010 — 2026-03-27
+
+**功能**：UI 改版——底部操作栏、右侧面板优化、打开输出目录、取消执行。
+
+**描述**：
+1. 重命名功能默认关闭（仅压缩默认开启）。
+2. 右侧设置面板优化：section header 可点击切换开关、图标装饰、禁用态半透明、el-segmented 替代 radio-group（冲突策略/输出格式/输出模式）、紧凑序号布局。
+3. 执行按钮和进度状态从顶部工具栏/App 状态栏移至工作台底部操作栏（48px 圆角），左侧显示就绪状态或进度，右侧显示"打开输出目录"和"执行/取消"按钮。
+4. 新增"打开输出目录"功能：IPC `shell:openDirectory` → Electron `shell.openPath()`，支持目录不存在时回退到父目录。
+5. 新增取消执行：task.store 增加 `isCancelling` 状态和 `cancelTask()` action，execute() 在 rename 和 compress 之间插入取消检查点，执行按钮在运行中变为红色"取消执行"按钮。
+6. App.vue 状态栏在工作台有文件时隐藏，由 WorkspaceView 的 action-bar 接管。
+
+**涉及文件**：`src/renderer/src/stores/workspace.store.ts`、`src/renderer/src/stores/task.store.ts`、`src/renderer/src/types/electron-api.d.ts`、`src/preload/index.ts`、`src/main/index.ts`、`src/renderer/src/locales/zh-CN.ts`、`src/renderer/src/locales/ja.ts`、`src/renderer/src/locales/ko.ts`、`src/renderer/src/composables/useWorkspace.ts`、`src/renderer/src/components/SettingsPanel.vue`、`src/renderer/src/views/WorkspaceView.vue`、`src/renderer/src/App.vue`
+
+---
+
+### 2026-03-27 拆分自动翻译开关和冲突策略为独立全局设置
+
+**问题**：自动翻译中文文件名的功能与重命名规则耦合，用户无法单独控制是否自动翻译；冲突处理策略嵌套在重命名规则模块中，不够独立。
+
+**修复方案**：
+1. 新建 `settings.store.ts`（Pinia），管理 `autoTranslate`（boolean）和 `conflictStrategy`（ConflictStrategy）两个全局设置，通过 localStorage（key: `app-settings`）持久化。
+2. `file.store.ts` 的 `autoTranslateFiles()` 增加 `settingsStore.autoTranslate` 前置检查，开关关闭时跳过翻译。
+3. 从 `RenameConfig` 接口移除 `conflictStrategy` 字段，`useWorkspace.ts` 改为从 `settingsStore` 读取冲突策略。
+4. `SettingsPanel.vue` 删除冲突处理 radio group；`SettingsView.vue` 新增"自动翻译"开关卡片和"冲突处理策略"卡片。
+5. 三个 locale 文件（zh-CN、ja、ko）新增 `settings.autoTranslate.*` 和 `settings.conflict.*` 翻译 key。
+
+**涉及文件**：`src/renderer/src/stores/settings.store.ts`（新建）、`src/renderer/src/stores/workspace.store.ts`、`src/renderer/src/stores/file.store.ts`、`src/renderer/src/composables/useWorkspace.ts`、`src/renderer/src/components/SettingsPanel.vue`、`src/renderer/src/views/SettingsView.vue`、`src/renderer/src/locales/zh-CN.ts`、`src/renderer/src/locales/ja.ts`、`src/renderer/src/locales/ko.ts`
+
+---
+
+### 2026-03-27 修复输出文件被 Electron 锁定 & 移除完成 toast
+
+**问题 1**：`local-image://` 协议使用 `net.fetch()` 提供图片预览，会持有文件句柄不释放，导致 Windows 下输出文件被占用无法操作。
+
+**修复**：改用 `fs.readFile()` 将文件读入内存 Buffer 后立即释放句柄，再通过 `new Response(data)` 返回，避免文件锁定。
+
+**问题 2**：任务完成后弹出 `ElMessage` toast 提示，用户希望状态全部在底部操作栏展示。
+
+**修复**：移除所有 `ElMessage.success/warning/error/info` 调用，改为通过 `taskStore.completeTask(message)` 将结果消息传入，底部操作栏根据任务状态（done/failed/running）分别显示对应图标和文本颜色。完成后 3 秒自动清除状态。
+
+**问题 3**：输出模块三选项纵向排列浪费空间，打开输出目录按钮不明显。
+
+**修复**：radio group 改为横向 flex 排列；打开目录改为带图标+文字的标准按钮。
+
+**涉及文件**：`src/main/index.ts`、`src/renderer/src/composables/useWorkspace.ts`、`src/renderer/src/stores/task.store.ts`、`src/renderer/src/views/WorkspaceView.vue`、`src/renderer/src/components/SettingsPanel.vue`
+
+
+---
+
+## #011 — 2026-03-27
+
+**问题**：FileList 表格列信息不完整，缺少选择框、压缩后大小、独立压缩按钮等列；原文件名和新文件名之间有多余的箭头列。
+
+**修复**：重新设计 FileList 表格为 10 列布局：选择框、序号、预览、原文件名、新文件名、原始大小、压缩后大小、状态、操作（独立压缩按钮）、删除。新增 `compressedSize` 字段到 `ImageFile` 数据模型，通过 `task:progress` 事件追踪每个文件的压缩后大小（默认显示"--"，压缩成功后显示实际大小）。新增 `compressSingleFile` 函数支持单文件独立压缩，复用现有 `compressImages` IPC。使用 `compressPathToIdMap` 解决压缩进度事件中 filePath 到 fileId 的映射问题。
+
+**涉及文件**：`src/renderer/src/components/FileList.vue`、`src/renderer/src/stores/file.store.ts`、`src/renderer/src/composables/useWorkspace.ts`、`src/renderer/src/types/electron-api.d.ts`、`src/renderer/src/views/WorkspaceView.vue`、`src/renderer/src/locales/zh-CN.ts`、`src/renderer/src/locales/ja.ts`、`src/renderer/src/locales/ko.ts`
+
+---
+
+## #012 — 2026-03-27
+
+**问题**：右侧 300px 固定侧边栏占用大量水平空间，导致 10 列文件列表表格被严重压缩，尤其在 1280-1366px 屏幕上。
+
+**修复**：将固定侧边栏替换为表格上方的水平配置栏（ConfigBar）。三个配置模块（重命名、压缩、输出）各自以 chip 按钮形式展示，点击弹出 popover 下拉面板进行配置。表格获得 100% 宽度。chip 按钮实时显示启用状态和关键参数摘要（如压缩质量、输出格式、输出模式）。同一时间只能打开一个 popover，点击外部自动关闭。
+
+**涉及文件**：`src/renderer/src/components/ConfigBar.vue`（新增）、`src/renderer/src/views/WorkspaceView.vue`（移除侧边栏，接入 ConfigBar）

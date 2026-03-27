@@ -49,6 +49,10 @@ const api = {
   selectDirectory: (): Promise<string | null> =>
     ipcRenderer.invoke("dialog:selectDirectory"),
 
+  // Open directory in OS file explorer
+  openDirectory: (dirPath: string): Promise<void> =>
+    ipcRenderer.invoke("shell:openDirectory", dirPath),
+
   // Compression operations
   compressImages: (files: string[], options: unknown): Promise<unknown> =>
     ipcRenderer.invoke("compress:execute", files, options),
@@ -69,6 +73,11 @@ const api = {
 
   // App info
   getAppVersion: (): Promise<string> => ipcRenderer.invoke("app:getVersion"),
+
+  // Locale
+  setLocale: (locale: string): void => {
+    ipcRenderer.send("app:setLocale", locale);
+  },
 };
 
 if (process.contextIsolated) {

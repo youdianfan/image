@@ -9,17 +9,17 @@
     <!-- Full mode (no files) -->
     <template v-if="!compact">
       <div class="import-content">
-        <el-icon class="import-icon" :size="48"><UploadFilled /></el-icon>
-        <p class="import-text">拖拽图片文件到此处</p>
-        <p class="import-hint">支持 PNG / JPG / JPEG / WEBP / GIF / HEIC</p>
+        <el-icon class="import-icon" :size="56"><UploadFilled /></el-icon>
+        <p class="import-text">{{ $t('import.dragHint') }}</p>
+        <p class="import-hint">{{ $t('import.formatHint') }}</p>
         <div class="import-actions">
-          <el-button type="primary" @click="$emit('importFiles')">
+          <el-button type="primary" size="large" @click="$emit('importFiles')">
             <el-icon><FolderOpened /></el-icon>
-            选择文件
+            {{ $t('import.selectFiles') }}
           </el-button>
-          <el-button @click="$emit('importFolder')">
+          <el-button size="large" @click="$emit('importFolder')">
             <el-icon><Folder /></el-icon>
-            选择文件夹
+            {{ $t('import.selectFolder') }}
           </el-button>
         </div>
       </div>
@@ -30,16 +30,16 @@
       <div class="compact-bar">
         <div class="compact-info">
           <el-icon><PictureFilled /></el-icon>
-          <span>{{ fileCount }} 个文件</span>
+          <span>{{ $t('import.fileCount', { count: fileCount }) }}</span>
         </div>
         <div class="compact-actions">
           <el-button size="small" @click="$emit('importFiles')">
             <el-icon><Plus /></el-icon>
-            添加文件
+            {{ $t('import.addFiles') }}
           </el-button>
           <el-button size="small" @click="$emit('importFolder')">
             <el-icon><FolderAdd /></el-icon>
-            添加文件夹
+            {{ $t('import.addFolder') }}
           </el-button>
           <el-button
             size="small"
@@ -48,7 +48,7 @@
             @click="$emit('clearFiles')"
           >
             <el-icon><Delete /></el-icon>
-            清空
+            {{ $t('import.clear') }}
           </el-button>
         </div>
       </div>
@@ -105,18 +105,29 @@ function onDrop(event: DragEvent): void {
 
 <style scoped>
 .import-area {
-  border: 2px dashed #dcdfe6;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border: 2px dashed var(--app-border-dashed);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.import-area:not(.is-compact):hover {
+  border-color: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary-light) 50%, transparent);
+}
+
+.import-area:not(.is-compact):hover .import-icon {
+  color: var(--app-primary);
+  transform: translateY(-4px);
 }
 
 .import-area.is-dragover {
-  border-color: #409eff;
-  background-color: #ecf5ff;
+  border-color: var(--app-primary);
+  background-color: var(--app-primary-light);
+  transform: scale(1.01);
 }
 
 .import-area:not(.is-compact) {
-  padding: 48px 24px;
+  padding: 56px 24px;
   text-align: center;
 }
 
@@ -124,34 +135,61 @@ function onDrop(event: DragEvent): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .import-icon {
-  color: #c0c4cc;
+  color: var(--app-text-placeholder);
+  transition: all 0.3s ease;
 }
 
 .import-text {
-  font-size: 16px;
-  color: #606266;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--app-text-regular);
 }
 
 .import-hint {
-  font-size: 12px;
-  color: #c0c4cc;
+  font-size: 13px;
+  color: var(--app-text-placeholder);
 }
 
 .import-actions {
-  margin-top: 16px;
+  margin-top: 20px;
   display: flex;
-  gap: 12px;
+  gap: 16px;
+}
+
+.import-actions :deep(.el-button) {
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.import-actions :deep(.el-button .el-icon) {
+  font-size: 18px;
+}
+
+.import-actions :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.3);
+}
+
+.import-actions :deep(.el-button:active) {
+  transform: translateY(0);
+}
+
+.import-actions :deep(.el-button:not(.el-button--primary):hover) {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* Compact mode */
 .import-area.is-compact {
   padding: 8px 12px;
   border-style: solid;
-  border-color: #e4e7ed;
+  border-color: var(--app-border);
 }
 
 .compact-bar {
@@ -165,7 +203,7 @@ function onDrop(event: DragEvent): void {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #606266;
+  color: var(--app-text-regular);
 }
 
 .compact-actions {

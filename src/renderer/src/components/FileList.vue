@@ -5,12 +5,14 @@
       stripe
       size="small"
       :max-height="maxHeight"
-      empty-text="暂无文件"
+      :empty-text="$t('fileList.empty')"
       style="width: 100%"
     >
+      <el-table-column type="selection" width="40" />
+
       <el-table-column type="index" label="#" width="50" />
 
-      <el-table-column label="预览" width="70" align="center">
+      <el-table-column :label="$t('fileList.preview')" width="70" align="center">
         <template #default="{ row, $index }">
           <el-image
             :src="row.imageUrl"
@@ -28,7 +30,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="原文件名" min-width="180">
+      <el-table-column :label="$t('fileList.originalName')" min-width="180">
         <template #default="{ row }">
           <el-tooltip
             :content="row.originalPath"
@@ -40,13 +42,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="40" align="center">
-        <template #default>
-          <el-icon class="arrow-icon"><Right /></el-icon>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="新文件名" min-width="200">
+      <el-table-column :label="$t('fileList.newName')" min-width="180">
         <template #default="{ row }">
           <div class="new-name-cell">
             <template v-if="editingId === row.id">
@@ -69,7 +65,7 @@
               </span>
               <el-tooltip
                 v-if="row.hasConflict"
-                content="文件名冲突，已自动处理"
+                :content="$t('fileList.conflictHint')"
                 placement="top"
               >
                 <el-icon class="conflict-icon"><WarningFilled /></el-icon>
@@ -79,13 +75,21 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="大小" width="90" align="right">
+      <el-table-column :label="$t('fileList.originalSize')" width="90" align="right">
         <template #default="{ row }">
           <span class="file-size">{{ row.sizeText }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column :label="$t('fileList.compressedSize')" width="100" align="right">
+        <template #default="{ row }">
+          <span class="compressed-size" :class="{ 'has-value': row.compressedSizeText !== '--' }">
+            {{ row.compressedSizeText }}
+          </span>
+        </template>
+      </el-table-column>
+
+      <el-table-column :label="$t('fileList.status')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="statusTagType(row.status)" size="small" round>
             {{ statusLabel(row.status) }}
@@ -93,7 +97,21 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="" width="50" align="center">
+      <el-table-column :label="$t('fileList.actions')" width="80" align="center">
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            :type="row.status === 'processing' ? 'primary' : 'default'"
+            :loading="row.status === 'processing'"
+            :disabled="isTaskRunning"
+            @click="$emit('compress', row.id)"
+          >
+            {{ row.status === 'processing' ? $t('fileList.compressing') : $t('fileList.compress') }}
+          </el-button>
+        </template>
+      </el-table-column>
+
+      <el-table-column :label="$t('fileList.delete')" width="60" align="center">
         <template #default="{ row }">
           <el-button
             type="danger"
@@ -118,7 +136,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { Right, WarningFilled, Delete, PictureFilled } from "@element-plus/icons-vue";
+import { useI18n } from "vue-i18n";
+import { WarningFilled, Delete, PictureFilled } from "@element-plus/icons-vue";
 import { ElImageViewer } from "element-plus";
 
 export interface FileListItem {
@@ -128,18 +147,23 @@ export interface FileListItem {
   imageUrl: string;
   newName: string;
   sizeText: string;
+  compressedSizeText: string;
   status: string;
   hasConflict: boolean;
 }
 
+const { t } = useI18n();
+
 const props = defineProps<{
   items: FileListItem[];
   maxHeight?: number;
+  isTaskRunning?: boolean;
 }>();
 
 const emit = defineEmits<{
   remove: [id: string];
   editName: [id: string, newName: string];
+  compress: [id: string];
 }>();
 
 // Image viewer state
@@ -188,18 +212,13 @@ function statusTagType(
 }
 
 function statusLabel(status: string): string {
-  switch (status) {
-    case "pending":
-      return "待处理";
-    case "processing":
-      return "处理中";
-    case "done":
-      return "完成";
-    case "error":
-      return "错误";
-    default:
-      return status;
-  }
+  const map: Record<string, string> = {
+    pending: t("fileList.statusPending"),
+    processing: t("fileList.statusProcessing"),
+    done: t("fileList.statusDone"),
+    error: t("fileList.statusError"),
+  };
+  return map[status] || status;
 }
 </script>
 
@@ -211,16 +230,11 @@ function statusLabel(status: string): string {
 
 .filename {
   font-size: 13px;
-  color: #303133;
+  color: var(--app-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
-}
-
-.arrow-icon {
-  color: #c0c4cc;
-  font-size: 12px;
 }
 
 .new-name-cell {
@@ -231,7 +245,7 @@ function statusLabel(status: string): string {
 
 .new-name {
   font-size: 13px;
-  color: #409eff;
+  color: var(--app-primary);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -243,18 +257,28 @@ function statusLabel(status: string): string {
 }
 
 .new-name.has-conflict {
-  color: #e6a23c;
+  color: var(--app-warning);
 }
 
 .conflict-icon {
-  color: #e6a23c;
+  color: var(--app-warning);
   font-size: 14px;
   flex-shrink: 0;
 }
 
 .file-size {
   font-size: 12px;
-  color: #909399;
+  color: var(--app-text-secondary);
+}
+
+.compressed-size {
+  font-size: 12px;
+  color: var(--app-text-placeholder);
+}
+
+.compressed-size.has-value {
+  color: var(--app-success);
+  font-weight: 500;
 }
 
 .thumb {
@@ -275,9 +299,9 @@ function statusLabel(status: string): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
+  background: var(--app-bg-secondary);
   border-radius: 4px;
-  color: #c0c4cc;
+  color: var(--app-text-placeholder);
   font-size: 20px;
 }
 </style>
