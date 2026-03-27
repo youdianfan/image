@@ -1,5 +1,11 @@
 <template>
-  <div class="workspace-view">
+  <div
+    class="workspace-view"
+    @dragenter.prevent="onDragEnter"
+    @dragover.prevent
+    @dragleave.prevent="onDragLeave"
+    @drop.prevent="onDrop"
+  >
     <!-- Empty state -->
     <template v-if="fileStore.files.length === 0">
       <ImportArea
@@ -17,12 +23,12 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <el-button size="small" @click="handleImportFiles">
-            <el-icon><Plus /></el-icon> 添加
+            <el-icon><Plus /></el-icon> {{ $t('workspace.add') }}
           </el-button>
           <el-button size="small" type="danger" plain @click="handleClear">
-            <el-icon><Delete /></el-icon> 清空
+            <el-icon><Delete /></el-icon> {{ $t('workspace.clear') }}
           </el-button>
-          <span class="file-count">{{ fileStore.files.length }} 个文件</span>
+          <span class="file-count">{{ $t('workspace.fileCount', { count: fileStore.files.length }) }}</span>
         </div>
         <div class="toolbar-right">
           <el-button
@@ -31,7 +37,7 @@
             @click="execute"
           >
             <el-icon><VideoPlay /></el-icon>
-            执行
+            {{ $t('workspace.execute') }}
           </el-button>
         </div>
       </div>
@@ -50,13 +56,21 @@
           <SettingsPanel />
         </div>
       </div>
+
+      <!-- Drop overlay -->
+      <Transition name="fade">
+        <div v-show="isDragOver" class="drop-overlay">
+          <el-icon :size="48" color="var(--app-primary)"><Upload /></el-icon>
+          <span class="drop-text">{{ $t('workspace.dropToAdd') }}</span>
+        </div>
+      </Transition>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { Plus, Delete, VideoPlay } from "@element-plus/icons-vue";
+import { Plus, Delete, VideoPlay, Upload } from "@element-plus/icons-vue";
 import { useFileStore } from "@/stores/file.store";
 import { useFileImport } from "@/composables/useFileImport";
 import { useWorkspace } from "@/composables/useWorkspace";
@@ -76,6 +90,33 @@ const {
 } = useWorkspace();
 
 const tableMaxHeight = ref(500);
+const isDragOver = ref(false);
+const dragCounter = ref(0);
+
+function onDragEnter(): void {
+  if (fileStore.files.length === 0) return;
+  dragCounter.value++;
+  isDragOver.value = true;
+}
+
+function onDragLeave(): void {
+  if (fileStore.files.length === 0) return;
+  dragCounter.value--;
+  if (dragCounter.value <= 0) {
+    dragCounter.value = 0;
+    isDragOver.value = false;
+  }
+}
+
+function onDrop(): void {
+  dragCounter.value = 0;
+  isDragOver.value = false;
+  if (fileStore.files.length === 0) return;
+  const paths = window.api.getLastDropPaths();
+  if (paths.length > 0) {
+    handleDrop(paths);
+  }
+}
 
 function onRemoveFile(id: string): void {
   fileStore.removeFile(id);
@@ -106,6 +147,7 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .toolbar {
@@ -124,7 +166,7 @@ onUnmounted(() => {
 
 .file-count {
   font-size: 13px;
-  color: #909399;
+  color: var(--app-text-secondary);
   margin-left: 4px;
 }
 
@@ -145,7 +187,39 @@ onUnmounted(() => {
 .workspace-sidebar {
   width: 300px;
   flex-shrink: 0;
-  border-left: 1px solid #e4e7ed;
+  border-left: 1px solid var(--app-border);
   overflow-y: auto;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px;
+  border: 2px dashed var(--app-primary);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--app-bg) 88%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.drop-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--app-primary);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
