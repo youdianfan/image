@@ -1,6 +1,6 @@
 {
   "name": "image-rename-ai",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Image Rename AI - Batch image renaming, format conversion, and compression tool",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -20,7 +20,10 @@
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "download:model": "node scripts/download-model.mjs",
-    "download:model:mirror": "node scripts/download-model.mjs --mirror"
+    "download:model:mirror": "node scripts/download-model.mjs --mirror",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

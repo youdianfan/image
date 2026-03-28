@@ -31,6 +31,9 @@ nsis:
   createDesktopShortcut: always
   oneClick: false
   allowToChangeInstallationDirectory: true
+  guid: com.imageai.app
+  allowElevation: true
+  deleteAppDataOnUninstall: false
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: build/icon.icns
