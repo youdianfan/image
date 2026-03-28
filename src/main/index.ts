@@ -125,7 +125,7 @@ function buildTrayMenu(): void {
 function createTray(): void {
   const iconPath =
     process.platform === "win32"
-      ? join(__dirname, "../../build/icon.ico")
+      ? join(__dirname, "../../resources/icon.ico")
       : join(__dirname, "../../resources/icon.png");
 
   const icon = nativeImage.createFromPath(iconPath);
