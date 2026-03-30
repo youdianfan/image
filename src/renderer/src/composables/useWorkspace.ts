@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { useFileStore } from "@/stores/file.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useSettingsStore } from "@/stores/settings.store";
